@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Cyprus Public Opinion Trends</title>
+    <link>https://yioryos-nardis.github.io/c-pot/tags/</link>
+    <description>Recent content in Tags on Cyprus Public Opinion Trends</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 27 Aug 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://yioryos-nardis.github.io/c-pot/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>politics</title>
+      <link>https://yioryos-nardis.github.io/c-pot/tags/politics/</link>
+      <pubDate>Tue, 27 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/c-pot/tags/politics/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>general</title>
+      <link>https://yioryos-nardis.github.io/c-pot/tags/general/</link>
+      <pubDate>Mon, 26 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/c-pot/tags/general/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>
