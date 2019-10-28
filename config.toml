@@ -1,0 +1,84 @@
+baseurl = "https://yioryos-nardis.github.io/c-pot/"
+title = "Cyprus Public Opinion Trends"
+theme = "hugo-theme-cleanwhite"
+languageCode = "en-us"
+# Enable comments by entering your Disqus shortname
+disqusShortname = ""
+googleAnalytics = "UA-145488565-1"
+preserveTaxonomyNames = true
+paginate = 5 #frontpage pagination
+hasCJKLanguage = true
+
+
+[outputs]
+home = ["HTML", "RSS", "Algolia"]
+
+[params]
+header_image = "img/banner.png"
+  SEOTitle = "Cyprus Public Opinion Trends Blog"
+  description = "non-partisan information and quantitative analysis on Cypriots’ attitudes"
+  keyword = ""
+  slogan = ""
+
+  image_404 = ""
+  title_404 = ""
+  
+  showtoc = false
+
+  # leancloud storage for page view counter
+  page_view_conter = false 
+  leancloud_app_id = ""
+  leancloud_app_key = ""
+
+  # algolia site search
+  algolia_search = false
+  algolia_appId = ""
+  algolia_indexName = ""
+  algolia_apiKey = ""
+
+  # Sidebar settings
+  sidebar_about_description = "Social researcher, comparativist, open source enthusiast. Contact me↓"
+  sidebar_avatar = "" 
+
+  featured_tags = true 
+  featured_condition_size = 1
+
+  friends = false
+  bookmarks = false
+  about_me = true
+
+[[menu.shortcuts]]
+name = "<i class='fas fa-tags'></i> Tags"
+url = "/tags"
+weight = 30
+
+  # Highlight.js theme
+  # demo: https://highlightjs.org/static/demo/
+  highlightjs = "docco"
+
+  [params.social]
+  email          = "yioryos@gmail.com"
+  rss            = true 
+  linkedin       = "https://www.linkedin.com/in/yioryosnardis/"
+  github         = "https://github.com/yioryos-nardis"
+  
+
+  [[params.addtional_menus]]
+  title =  "ABOUT"
+  href =  "/top/about/"
+  [[params.addtional_menus]]
+  title =  "CONTACT"
+  href =  "/top/contact/"
+  [[params.addtional_menus]]
+  title =  "SUBSCRIBE"
+  href =  "/top/subscribe/"
+
+[outputFormats.Algolia]
+baseName = "algolia"
+isPlainText = true
+mediaType = "application/json"
+notAlternative = true
+
+[params.algolia]
+vars = ["title", "summary", "date", "publishdate", "expirydate", "permalink"]
+params = ["categories", "tags"] 
