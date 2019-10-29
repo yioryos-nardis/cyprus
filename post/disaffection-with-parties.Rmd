@@ -340,7 +340,7 @@ save(pm, file=("pm.rdata"))
 library(dplyr)
 library(plotly)
 
-load("/Users/Yioryos/GitHub/yioryos-nardis.github.io/data/pm.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/pm.rdata")
 load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_pp.rdata")
 load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_pp_age.rdata")
 
