@@ -1,0 +1,11 @@
+---
+title: replication
+author: ''
+date: '2019-08-08'
+slug: replication
+categories: []
+tags: []
+---
+
+This site is created in the _R_ statistical program using Markdown with the _blogdown_ package and a [Hugo](https://gohugo.io/){target="_blank"} theme. Analyses are conducted in _R_ with the _plotly_ package for visualizations.<br><br>
+_R_ Markdown files with replication information for all analyses can be found on my [GitHub](https://github.com/yioryos-nardis/yioryos-nardis.github.io){target="_blank"} page in the "post" folder.

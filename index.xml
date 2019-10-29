@@ -50,6 +50,27 @@ The blog provides non-partisan information and quantitative analysis on Cypriots
     </item>
     
     <item>
+      <title>replication</title>
+      <link>/top/replication/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/top/replication/</guid>
+      <description>This site was created using Markdown in the R statistical software, with the Blogdown package and a Hugo
+theme. Analyses were conducted in R and visualizations use the plotly package.
+R Markdown files with replication information for all analyses can be found on my GitHub page in the ‘post’ folder.</description>
+    </item>
+    
+    <item>
+      <title>replication</title>
+      <link>/top/replication/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/top/replication/</guid>
+      <description>This site is created in the R statistical program using Markdown with the blogdown package and a Hugo theme. Analyses are conducted in R with the plotly package for visualizations.
+R Markdown files with replication information for all analyses can be found on my GitHub page in the “post” folder.</description>
+    </item>
+    
+    <item>
       <title>subscribe</title>
       <link>/top/subscribe/</link>
       <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
