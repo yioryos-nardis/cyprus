@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Cyprus Public Opinion Trends</title>
+    <link>https://yioryos-nardis.github.io/</link>
+    <description>Recent content on Cyprus Public Opinion Trends</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 27 Aug 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://yioryos-nardis.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How disaffected are Cypriots with Political Institutions? : Political Parties</title>
+      <link>https://yioryos-nardis.github.io/post/disaffection-with-parties/</link>
+      <pubDate>Tue, 27 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/post/disaffection-with-parties/</guid>
+      <description>This two part series examines the extent to which global trends in disaffection towards political institutions also manifest themselves in Cyprus and how it compares to other EU countries. Trust towards political parties is examined in this first part of the series. The analysis finds that trust in parties has been declining over the past 15 years, particularly from 2014 onwards. In contrast, the EU as a whole experienced relative stability during this period.</description>
+    </item>
+    
+    <item>
+      <title>Welcome to C-POT</title>
+      <link>https://yioryos-nardis.github.io/post/welcome/</link>
+      <pubDate>Mon, 26 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/post/welcome/</guid>
+      <description>Welcome to Cyprus Public Opinion Trends (C-POT)!
+Through this blog I’ll be providing non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data and to ensure transparency, information to replicate all analyses is provided.</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://yioryos-nardis.github.io/top/about/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/top/about/</guid>
+      <description>Welcome to Cyprus Public Opinion Trends (C-POT)!
+The blog provides non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data and to ensure transparency software code to replicate all analyses is provided.</description>
+    </item>
+    
+    <item>
+      <title>contact</title>
+      <link>https://yioryos-nardis.github.io/top/contact/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/top/contact/</guid>
+      <description>Please feel free to send me comments, suggestions, and ideas at: yioryos@gmail.com</description>
+    </item>
+    
+    <item>
+      <title>subscribe</title>
+      <link>https://yioryos-nardis.github.io/top/subscribe/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://yioryos-nardis.github.io/top/subscribe/</guid>
+      <description> Loading…  </description>
+    </item>
+    
+  </channel>
+</rss>

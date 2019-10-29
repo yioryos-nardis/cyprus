@@ -1,0 +1,11 @@
+---
+title: subscribe
+author: ''
+date: '2019-08-08'
+slug: subscribe
+categories: []
+tags:
+  - general
+---
+
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdXPRqnVfyLFjyKmNMS7omRgEEMwPDx5xeLtff96CRSdi6TxA/viewform?embedded=true" width="640" height="508" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
