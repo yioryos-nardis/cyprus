@@ -1,0 +1,3 @@
+[submodule "yioryos-nardis.github.io"]
+	path = yioryos-nardis.github.io
+	url = git@github.com:yioryos-nardis/yioryos-nardis.github.io.git
