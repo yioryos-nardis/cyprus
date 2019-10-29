@@ -66,8 +66,8 @@ R Markdown files with replication information for all analyses can be found on m
       <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
       
       <guid>/top/replication/</guid>
-      <description>This site is created in the R statistical program using Markdown with the blogdown package and a Hugo theme. Analyses are conducted in R with the plotly package for visualizations.
-R Markdown files with replication information for all analyses can be found on my GitHub page in the “post” folder.</description>
+      <description>This site is created in the R statistical program using Markdown with the blogdown package and a Hugo theme. Analyses are conducted in R, and visualizations are created using the plotly package.
+R Markdown files with replication scripts and data sources for all analyses can be found on my GitHub page in the “post” folder.</description>
     </item>
     
     <item>
