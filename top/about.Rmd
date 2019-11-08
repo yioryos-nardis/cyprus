@@ -7,6 +7,7 @@ categories: []
 tags: []
 ---
 
+__About__  
 Welcome to Cyprus Public Opinion Trends (C-POT)!   
 <br>
 The blog provides non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data and to ensure transparency software code to replicate all analyses is provided. Occasional contributions from guest writers will also be featured.  

@@ -6,5 +6,5 @@ slug: contact
 categories: []
 tags: []
 ---
-
+__Contact__  
 Please feel free to send me comments, suggestions, and ideas at: <a href="mailto:yioryos@gmail.com">yioryos@gmail.com</a>

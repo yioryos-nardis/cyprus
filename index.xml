@@ -36,7 +36,8 @@ Through this blog I’ll be providing non-partisan information and quantitative 
       <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
       
       <guid>/top/about/</guid>
-      <description>Welcome to Cyprus Public Opinion Trends (C-POT)!
+      <description>About
+Welcome to Cyprus Public Opinion Trends (C-POT)!
 The blog provides non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data and to ensure transparency software code to replicate all analyses is provided.</description>
     </item>
     
@@ -46,7 +47,8 @@ The blog provides non-partisan information and quantitative analysis on Cypriots
       <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
       
       <guid>/top/contact/</guid>
-      <description>Please feel free to send me comments, suggestions, and ideas at: yioryos@gmail.com</description>
+      <description>Contact
+Please feel free to send me comments, suggestions, and ideas at: yioryos@gmail.com</description>
     </item>
     
     <item>
@@ -66,7 +68,8 @@ R Markdown files with replication information for all analyses can be found on m
       <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
       
       <guid>/top/replication/</guid>
-      <description>This site is created in the R statistical program using Markdown with the blogdown package and a Hugo theme. Analyses are conducted in R, and visualizations are created using the plotly package.
+      <description>Replication Information
+This site is created in the R statistical program using Markdown with the blogdown package and a Hugo theme. Analyses are conducted in R, and visualizations are created using the plotly package.
 R Markdown files with replication scripts and data sources for all analyses can be found on my GitHub page in the “post” folder.</description>
     </item>
     
