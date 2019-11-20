@@ -328,9 +328,6 @@ pm$group <- dplyr::recode(pm$group, "pm_gcc" = "Greek-Cypriots", "pm_tcc" = "Tur
 pm <- pm[order(pm$group), ] 
 
 save(pm, file=("pm.rdata"))
-
-
-
 ```
 
 
@@ -453,6 +450,7 @@ anot_url_4 <- list(
   y = 0.1,
   showarrow = FALSE
 )
+
 #Colours
 #Cypriots;9702A7
 #Turkish-Cypriots; FFCF00
@@ -543,50 +541,54 @@ plot_pm_cyp <- plot_ly(pm, y = ~pm, x= ~year, color = ~group, type = "scatter",
 
 >This two part series examines the extent to which global trends in disaffection towards political institutions also manifest themselves in Cyprus and how it compares to other EU countries. Trust towards political parties is examined in this first part of the series. The analysis finds that trust in parties has been declining over the past 15 years, particularly from 2014 onwards. In contrast, the EU as a whole experienced relative stability during this period. Turkish-Cypriots tend to be 2-3 times more trusting of political parties than Greek-Cypriots and slightly more likely to be members of one. The second part of the series will examine trust towards EU institutions.
 <br><br>
+__ΠόσοΔυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Πολιτικά Κόμματα__
 Αυτή η σειρά αποτελείται από δύο μέρη και εξετάζει το βαθμό στον οποίο οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια απέναντι στους πολιτικούς θεσμούς εκδηλώνονται και στην Κύπρο και πώς συγκρίνεται με άλλες χώρες της ΕΕ. Η εμπιστοσύνη προς τα πολιτικά κόμματα εξετάζεται σε αυτό το πρώτο μέρος της σειράς. Η ανάλυση διαπιστώνει ότι η εμπιστοσύνη προς κόμματα μειώνεται τα τελευταία 15 χρόνια, ιδιαίτερα από το 2014 και μετά. Αντιθέτως, η ΕΕ ως σύνολο αντιμετωπίσε σχετική σταθερότητα κατά τη διάρκεια αυτής της περιόδου. Οι Τουρκοκύπριοι τείνουν να είναι 2-3 φορές πιο εμπιστευτικοί των πολιτικών κομμάτων από τους Ελληνοκύπριους και λίγο πιο πιθανό να είναι μέλη ενός κόμματος. Το δεύτερο μέρος θα εξετάσει την εμπιστοσύνη προς τους θεσμούς της ΕΕ.
 <br><br>
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Siyasi Partiler__
 Bu iki bolümlük seride global politik güven trendleri Kıbrıs’ta ve diğer Avrupa ülkeleri bağlamında ele alınmaktadır. İlk bölümde, politik partilere olan güven incelenmektedir. Ikinci bölümde, hükümet ve parlemantolara olan güven ele alınacaktır. Analizlere göre, Kıbrıs’ta politik güven son 15 yıldır azalmaktadır,özellikle 2004’ten beri. Buna karşın, aynı süre içerisinde Avrupa genelinin ortalamasında güven indeksinde bir azalma veya artma olmamıştır. Politik partilere Kıbrıslı Turkler, Kıbrıslı Rumlara gore 2-3 kat daha fazla güvenmektedir; ve aynı zamanda bir partiye üye olma olasılıkları Kıbrıslı Rumlara gore biraz daha yüksektir. Ikinci bölümde, Avrupa Birliği Kurumlarına olan güven ele alınacaktır.
 
 <br>
-Political disaffection, that is, unfavourable attitudes and behaviours towards political processes and institutions, namely parties and politicians, has consequences for citizens' involvement in political life such as political participation and voting. This is particularly relevant in Cyprus with regard to the design and functioning of institutions in a future unified state. When the public turns away from the processes we have developed to organise society, then solving common issues becomes more difficult. Distrust in parties is one such expression of political disaffection that has problematic implications, as parties have traditionally been the ways in which participation is organized. Political parties encourage us to vote, tell us who to vote for, and which policies to support.  
-<br>
-Beginning in the 1960’s, trust in politics and government began declining in most democracies where long-term data is available. Distrust in political parties is now prevalent in European countries (Norris, 2011), as are reductions in official party membership (van Biezen, Mair, & Poguntke, 2012).  
+Political disaffection,i.e., unfavourable attitudes and behaviours towards political processes and institutions, has consequences for public involvement in political life. When the public turns away from the processes we have developed to organise society, then solving common issues becomes more difficult. This is relevant to Cyprus where people's invovlement in the design of institutions for a future unified state is minimal.  
+<br> 
+Distrust in parties is one such expression of political disaffection that has problematic implications, as parties have traditionally been the ways in which participation is organized. Political parties encourage us to vote, tell us who to vote for, and which policies to support. Beginning in the 1960’s, trust in politics and government began declining in most democracies where long-term data is available. Distrust in political parties is now prevalent in European countries (Norris, 2011), as are reductions in official party membership (van Biezen, Mair, & Poguntke, 2012).  
 <br>
 How do these global trends manifest themselves in Cyprus? To examine Cypriots’ disaffection with political parties the analysis uses data from the Eurobarometer and World Values Survey/European Values Study, international research projects that regularly conduct representative surveys in Cyprus among Greek-Cypriots and Turkish-Cypriots.  
 <br>
-Trust in political parties among Cypriots, while already low, declined considerably. During this time it has fallen over 16% from around 25% in 2004 to 11% in 2018. The trends for Turkish-Cypriots and Greek-Cypriots have taken different paths though and Turkish-Cypriots tend to be more trusting of political parties for nearly all years during this time frame. Trust among Greek-Cypriots has eroded at a steeper rate of almost 20%, from around 29% in 2008 to 10% in 2019. However, the decline in trust among Turkish-Cypriots began in 2014 and until that time it experienced a period of trendless fluctuation, after which it fell markedly for three consecutive years.
+Trust in political parties among Cypriots, while already low, declined considerably. During this time it has fallen over 16% from around 25% in 2004 to 11% in 2018. Turkish-Cypriots tend to be more trusting of political parties than Greek-Cypriyos for nearly all years during this time frame. Trust among Greek-Cypriots eroded at a steeper rate of almost 20%, from around 29% in 2008 to 10% in 2019. However, the decline in trust among Turkish-Cypriots began in 2014 as until that time it experienced a period of trendless fluctuation, after which it fell markedly.
 
 <br>
 `r plot_trust_pp_cyp`
-_Interactive visualizations: scroll over to display values and menu to zoom, save, and more._
+_Interactive visualizations: hover over to display values, double click to zoom, click legend to hide/show lines_
 <br>
 
-Exploring generational differences in trust in parties reveals that today the differences across age are small and analogous for both communities. However, for Greek-Cypriots, even though trust has fallen for all age groups since 2004, the largest declines were for older persons. In particular those aged 55 and older who were typically the most trusting of political parties. Where differences between younger and older persons were around 20% during the 2000s, by 2017 they fell to within 5%. Conversely, generational differences were less pronounced for Turkish-Cypriots over this time period. Again, trust was typically higher for older persons.
+Exploring generational differences reveals that today the differences across age are small and analogous for both communities. However, for Greek-Cypriots, even though trust in parties has fallen for all age groups since 2004, the largest declines were for older persons. In particular those aged 55 and older who typically were the most trusting of political parties. Where differences between younger and older persons were around 20% during the 2000s, by 2017 they fell to within 5%. Conversely, generational differences were less pronounced for Turkish-Cypriots over this time period. Again, trust was typically higher for older persons.
 <br>
 `r plot_pp_age_gcc`
 <br><br>
 `r plot_pp_age_tcc`
 <br><br>
-How does this trend of declining trust in Cyprus compare to the rest of the EU? The levels of trust among citizens of the EU-15 and EU-25 are quite similar. The levels of trust in parties throughout the EU were stable over this period, unlike the declining trend evident in Cyprus. While from 2004 to 2010 Cypriots tended to be more trusting of parties than the average European, from 2011 onwards trust began dipping below the overall EU levels. By 2017 it was 12% lower than the average European.
+How does this trend compare to the rest of the EU? The level of trust in parties throughout the EU was stable during this period. While from 2004 to 2010 Cypriots tended to be more trusting of parties than the average European, from 2011 onwards trust began dipping below the overall EU levels. By 2017 the average Cypriot was 12% less trusting of parties than the average European's.
 
 <br>
 `r plot_trust_pp_eu`
 <br>
 
-Turning to a behavioral indicator of engagement with political parties, party membership in Cyprus is also low. Around 7-8% of Cyrpiots claim party membership. Similar to trust, membership in parties is slightly higher among Turkish-Cypriots, on average around 3% higher.
+Behavioral indicators of engagement with political parties reflect similar findings, as party membership in Cyprus is also very low. Around 7-8% of Cyrpiots claim party membership. As with trust, membership in parties is slightly higher among Turkish-Cypriots, on average around 3% higher.
 <br><br>
 
 `r plot_pm_cyp`
 <br>
 
-Political parties in Cyprus have clearly let people down, as Cypriots are considerably less trusting of political parties than the average European and a large portion perceives them with almost complete disinterest. Moreover, given that younger Cypriots are typically the least trusting of parties signifies troubling long-term implications for political processes. The difference between age groups in recent times may be small, and smaller than in the past, but nonetheless, for young people the beginning of their political life is synonymous with distrust.
+Political parties in Cyprus have clearly let people down, as Cypriots are considerably less trusting of political parties than the average European and a large portion perceives them with almost complete disinterest. Moreover, given that younger Cypriots are typically the least trusting signifies troubling long-term implications for political processes. The difference between age groups in recent times may be small, and smaller than in the past, but nonetheless, for young people the beginning of their political life is synonymous with distrust.
 <br>
 
-While Turkish-Cypriots may be less trusting of political parties than the average European, they are still significantly more trusting of them and more likely to be members of one than Greek-Cypriots. The extremely low trust among Greek-Cypriots indicates the severity of parties’ failure to meaningfully engage with them. These failings can be seen from the parties’ dismal abilities in grassroots organizing during recent elections. Turnout at the Republic of Cyprus 2018 presidential elections and 2016 parliamentary elections was the lowest ever recorded, at 72% and 67% respectively. Disengagement is again considerably pronounced for the youth as a mere 25% of newly eligible voters (i.e. eighteen- and nineteen-year-olds) actually registered to vote in the 2018 Republic of Cyprus presidential elections (Phileleftheros, 2017). These findings clearly challenge the traditional way of thinking about political parties as meaningful means of connecting the public to their institutions in Cyprus. 
+Greek-Cypriots are significantly less trusting of parties and less likely to be members of one than Turkish-Cypriots. The extremely low trust among Greek-Cypriots indicates the severity of parties’ failure to meaningfully engage with them. These failings can be seen from the parties’ dismal abilities in grassroots organizing during recent elections. Turnout at the Republic of Cyprus 2018 presidential elections and 2016 parliamentary elections was the lowest ever recorded, at 72% and 67% respectively. Disengagement is again considerably pronounced for the youth as a mere 25% of newly eligible voters (i.e. eighteen- and nineteen-year-olds) actually registered to vote in the 2018 Republic of Cyprus presidential elections (Phileleftheros, 2017). These findings clearly challenge the traditional way of thinking about political parties as meaningful means of connecting the public to their institutions in Cyprus. 
 <br><br>
 
 __Data sources__  
+_Trust in parties_
 Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  
+_Party membership_
 World Values Survey/European Values Study: WVS 5, EVS 4, WVS6  
 
 <br>

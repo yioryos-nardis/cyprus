@@ -1,0 +1,735 @@
+---
+title: 'How disaffected are Cypriots with Political Institutions?: European Union Institutions'
+author: 'Yioryos Nardis'
+date: '2019-11-18'
+slug: disaffection-with-eu-institutions
+categories: []
+tags:
+  - politics
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(survey)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(stats)
+library(knitr)
+library(Hmisc)
+library(webshot)
+library(processx)
+library(car)
+library(tidyr)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+#Access Eurobarometer data files from websites of EU Open Data Portal, ICPSR, or GESIS
+load("EB2004.62.rdata")
+load("EB2005.63.4.rdata")
+load("EB2006.65.2.rdata")
+load("EB2007.68.1.rdata")
+load("EB2008.70.1.rdata")
+load("EB2009.71.3.rdata")
+load("EB2010.74.2.rdata")
+load("EB2011.76.3.rdata")
+load("EB2012.77.3.rdata")
+load("EB2013.79.3.rdata")
+load("EB2014.81.4.rdata")
+load("EB2015.84.3.rdata")
+load("EB2016.85.2.rdata")
+load("EB2017.87.3.rdata")
+load("EB2018.89.1.rdata")
+
+
+#####Recoding country groupings to pass into survey estimate function#####  
+#Inconsistent variable structures across dataframes require use of two packages: 'car' and 'dplyr'
+EB2004.62$V6 <- car::recode(EB2004.62$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2005.63.4$V6 <- car::recode(EB2005.63.4$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2006.65.2$V6 <- car::recode(EB2006.65.2$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2007.68.1$V6 <- car::recode(EB2007.68.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2008.70.1$V6 <- car::recode(EB2008.70.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2009.71.3$COUNTRY <- car::recode(EB2009.71.3$COUNTRY,"18 = 'GCC'; 32 = 'TCC'")
+EB2010.74.2$V6 <- car::recode(EB2010.74.2$V6,"'(19) Cyprus (Republic)' = 'GCC'; '(33) Cyprus (CY-TCC)' = 'TCC'")
+EB2011.76.3$COUNTRY <- dplyr::recode(EB2011.76.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2012.77.3$COUNTRY <- dplyr::recode(EB2012.77.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2013.79.3$COUNTRY <- dplyr::recode(EB2013.79.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2014.81.4$COUNTRY <- dplyr::recode(EB2014.81.4$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2015.84.3$COUNTRY <- dplyr::recode(EB2015.84.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2016.85.2$COUNTRY <- dplyr::recode(EB2016.85.2$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2017.87.3$COUNTRY <- dplyr::recode(EB2017.87.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2018.89.1$country <- car::recode(EB2018.89.1$country,"19 = 'GCC'; 33 = 'TCC'")
+EB2018.89.1$country <- as.factor(EB2018.89.1$country)
+
+EB2010.74.2$V25 <- dplyr::recode(EB2010.74.2$V25, "(1) EU15" = "1")
+EB2011.76.3$VEU15 <- dplyr::recode(EB2011.76.3$VEU15, "(1) EU 15" = "1")
+EB2012.77.3$VEU15 <- dplyr::recode(EB2012.77.3$VEU15, "(1) EU 15" = "1")
+EB2013.79.3$EU15 <- dplyr::recode(EB2013.79.3$EU15, "(1) EU-15" = "1")
+EB2014.81.4$EU15 <- dplyr::recode(EB2014.81.4$EU15 , "(1) EU15" = "1")
+EB2015.84.3$EU15 <- dplyr::recode(EB2015.84.3$EU15, "(1) EU15" = "1")
+EB2016.85.2$EU15 <- dplyr::recode(EB2016.85.2$EU15, "(1) EU15" = "1")
+EB2017.87.3$EU15 <- dplyr::recode(EB2017.87.3$EU15, "(1) EU15" = "1")
+EB2018.89.1$eu15 <- car::recode(EB2018.89.1$eu15, "'EU15' = '1'")
+EB2018.89.1$eu15 <- as.factor(EB2018.89.1$eu15)
+
+EB2010.74.2$V29 <- dplyr::recode(EB2010.74.2$V25, "(1) EU25" = "1")
+EB2011.76.3$VEU25 <- dplyr::recode(EB2011.76.3$VEU25, "(1) EU 25" = "1")
+EB2012.77.3$VEU25 <- dplyr::recode(EB2012.77.3$VEU25, "(1) EU 25" = "1")
+EB2013.79.3$EU25 <- dplyr::recode(EB2013.79.3$EU25, "(1) EU-25" = "1")
+EB2014.81.4$EU25 <- dplyr::recode(EB2014.81.4$EU25 , "(1) EU25" = "1")
+EB2015.84.3$EU25 <- dplyr::recode(EB2015.84.3$EU25, "(1) EU25" = "1")
+EB2016.85.2$EU25 <- dplyr::recode(EB2016.85.2$EU25, "(1) EU25" = "1")
+EB2017.87.3$EU25 <- dplyr::recode(EB2017.87.3$EU25, "(1) EU25" = "1")
+EB2018.89.1$eu25 <- car::recode(EB2018.89.1$eu25, "'EU15' = '1'")
+EB2018.89.1$eu25  <- as.factor(EB2018.89.1$eu25 )
+
+#save(EB2004.62, file=("EB2004.62.rdata"))
+#save(EB2005.63.4, file=("EB2005.63.4.rdata"))
+#save(EB2005.64.2, file=("EB2005.64.2.rdata"))
+#save(EB2006.65.2, file=("EB2006.65.2.rdata"))
+#save(EB2007.68.1, file=("EB2007.68.1.rdata"))
+#save(EB2008.70.1, file=("EB2008.70.1.rdata"))
+#save(EB2009.71.3, file=("EB2009.71.3.rdata"))
+#save(EB2010.74.2, file=("EB2010.74.2.rdata"))
+#save(EB2011.76.3, file=("EB2011.76.3.rdata"))
+#save(EB2012.77.3, file=("EB2012.77.3.rdata"))
+#save(EB2013.79.3, file=("EB2013.79.3.rdata"))
+#save(EB2014.81.4, file=("EB2014.81.4.rdata"))
+#save(EB2015.84.3, file=("EB2015.84.3.rdata"))
+#save(EB2016.85.2, file=("EB2016.85.2.rdata"))
+#save(EB2017.87.3, file=("EB2017.87.3.rdata"))
+#save(EB2018.89.1, file=("EB2018.89.1.rdata"))
+
+######Lists with data, weights, groups, & variables to pass into survey estimate function
+
+#Trust in EU#
+#Cyprus
+eu1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V95_fac")
+eu2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V81_fac")
+eu3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V91_fac")
+eu4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V152_fac")
+eu5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V230_fac")
+eu6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA9_5_fac")
+eu7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V302_fac")
+eu8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA10_8_fac")
+eu9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA13_4_fac")
+eu10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA12_4_fac")
+eu11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA9_4_fac")
+eu12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_10_fac") #GCC
+eu13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8A_9_fac") #GCC
+eu14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_9_fac") #GCC
+eu15 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_7_fac") #TCC
+eu16 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8B_2_fac") #TCC
+eu17 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_2_fac") #TCC
+eu46 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa8a_10_fac") #GCC
+eu47 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa8b_2_fac") #TCC
+
+
+#EU-15
+eu18 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V95_fac")
+eu19 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V81_fac")
+eu20 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V91_fac")
+eu21 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V152_fac")
+eu22 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V230_fac")
+eu23 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA9_5_fac")
+eu24 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V302_fac")
+eu25 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA10_8_fac")
+eu26 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA13_4_fac")
+eu27 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA12_4_fac")
+eu28 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA9_4_fac")
+eu29 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA8A_10_fac")
+eu30 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA8A_9_fac")
+eu31 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA8A_9_fac")
+eu48 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa8a_10_fac")
+
+
+#EU-25
+eu32 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V95_fac")
+eu33 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V81_fac")
+eu34 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V91_fac")
+eu35 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V152_fac")
+eu36 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V230_fac")
+eu37 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA9_5_fac")
+eu38 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V302_fac")
+eu39 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA10_8_fac")
+eu40 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA13_4_fac")
+eu41 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA12_4_fac")
+eu42 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU25", estimate="QA9_4_fac")
+eu43 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA8A_10_fac")
+eu44 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+eu45 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+eu49 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa8a_10_fac")
+
+
+#Trust in EP#
+#Cyprus
+ep1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V202_fac")
+ep2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V168_fac")
+ep3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3018_fac")
+ep4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V191_fac")
+ep5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V274_fac")
+ep6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V331_fac")
+ep8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_1_fac")
+ep10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_1_fac")
+ep11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_1_fac")
+ep12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_1_fac")
+ep13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_1_fac")
+ep14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_1_fac") 
+
+
+#EU-15
+ep15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V202_fac")
+ep16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V168_fac")
+ep17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3018_fac")
+ep18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V191_fac")
+ep19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V274_fac")
+ep20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_1_fac")
+ep21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V331_fac")
+ep22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_1_fac")
+ep23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_1_fac")
+ep24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_1_fac")
+ep25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_1_fac")
+ep26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_1_fac")
+ep27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_1_fac")
+ep28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_1_fac")
+ep44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_1_fac")
+
+
+#EU-25
+ep29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V202_fac")
+ep30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V168_fac")
+ep31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3018_fac")
+ep32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V191_fac")
+ep33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V274_fac")
+ep34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_1_fac")
+ep35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V331_fac")
+ep36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_1_fac")
+ep37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_1_fac")
+ep38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_1_fac")
+ep39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_1_fac")
+ep40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_1_fac")
+ep41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_1_fac")
+ep42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_1_fac")
+ep45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_1_fac")
+
+
+#Trust in EC#
+#Cyprus
+ec1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V203_fac")
+ec2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V169_fac")
+ec3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3019_fac")
+ec4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V192_fac")
+ec5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V275_fac")
+ec6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V332_fac")
+ec8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_2_fac")
+ec10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_2_fac")
+ec11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_2_fac")
+ec12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_2_fac")
+ec13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_2_fac")
+ec14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_2_fac") 
+
+
+#EU-15
+ec15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V203_fac")
+ec16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V169_fac")
+ec17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3019_fac")
+ec18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V192_fac")
+ec19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V275_fac")
+ec20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_2_fac")
+ec21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V332_fac")
+ec22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_2_fac")
+ec23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_2_fac")
+ec24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_2_fac")
+ec25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_2_fac")
+ec26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_2_fac")
+ec27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_2_fac")
+ec28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_2_fac")
+ec44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_2_fac")
+
+
+#EU-25
+ec29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V203_fac")
+ec30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V169_fac")
+ec31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3019_fac")
+ec32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V192_fac")
+ec33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V275_fac")
+ec34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_2_fac")
+ec35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V332_fac")
+ec36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_2_fac")
+ec37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_2_fac")
+ec38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_2_fac")
+ec39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_2_fac")
+ec40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_2_fac")
+ec41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_2_fac")
+ec42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_2_fac")
+ec45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_2_fac")
+
+
+#Trust in ECB
+#Cyprus
+ecb1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V207_fac")
+ecb2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V172_fac")
+ecb3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3022_fac")
+ecb4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V196_fac")
+ecb5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V277_fac")
+ecb6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_3_fac")
+ecb7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V334_fac")
+ecb8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_4_fac")
+ecb9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_4_fac")
+ecb10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_4_fac")
+ecb11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_3_fac") #Not asked in TCC
+ecb12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_3_fac") #Not asked in TCC
+ecb13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_3_fac") #Not asked in TCC
+ecb14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_3_fac") #Not asked in TCC
+ecb43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_3_fac") #Not asked in TCC
+
+
+#EU-15
+ecb15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V207_fac")
+ecb16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V172_fac")
+ecb17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3022_fac")
+ecb18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V196_fac")
+ecb19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V277_fac")
+ecb20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_3_fac")
+ecb21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V334_fac")
+ecb22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_4_fac")
+ecb23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_4_fac")
+ecb24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_4_fac")
+ecb25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_3_fac")
+ecb26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_3_fac")
+ecb27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_3_fac")
+ecb28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_3_fac")
+ecb44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_3_fac")
+
+
+#EU-25
+ecb29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V207_fac")
+ecb30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V172_fac")
+ecb31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3022_fac")
+ecb32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V196_fac")
+ecb33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V277_fac")
+ecb34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_3_fac")
+ecb35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V334_fac")
+ecb36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_4_fac")
+ecb37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_4_fac")
+ecb38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_4_fac")
+ecb39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_3_fac")
+ecb40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_3_fac")
+ecb41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_3_fac")
+ecb42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_3_fac")
+ecb45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_3_fac")
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Fuction calling 'Func' and calcuating weighted survey estimates for a given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#####Calculating Trust in EU Institutions
+#Trust in EU Institutions among GCC
+dataInfo <- list(eu1, eu2, eu3, eu4, eu5, eu6, eu7, eu8, eu9, eu10, eu11, eu12, eu13, eu14, eu46) #Trust in EU
+trust_eur <- applyFunc("trust_eu_gcc", "GCC", dataInfo)
+
+dataInfo <- list(ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13, ep14, ep43) #Trust in EP
+results <- applyFunc("trust_ep_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec1, ec2, ec3, ec4, ec5, ec6, ec7, ec8, ec9, ec10, ec11, ec12, ec13, ec14, ec43) #Trust in EC
+results <- applyFunc("trust_ec_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb1, ecb2, ecb3, ecb4, ecb5, ecb6, ecb7, ecb8, ecb9, ecb10, ecb11, ecb12, ecb13, ecb14, ecb43) #Trust in ECB
+results <- applyFunc("trust_ecb_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among TCC
+dataInfo <- list(eu1, eu2, eu3, eu4, eu5, eu6, eu7, eu8, eu9, eu10, eu11, eu15, eu16, eu17, eu47) #Trust in EU
+results <- applyFunc("trust_eu_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13, ep14, ep43) #Trust in EP
+results <- applyFunc("trust_ep_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec1, ec2, ec3, ec4, ec5, ec6, ec7, ec8, ec9, ec10, ec11, ec12, ec13, ec14, ec43) #Trust in EC
+results <- applyFunc("trust_ec_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb1, ecb2, ecb3, ecb4, ecb5, ecb6, ecb7, ecb8, ecb9, ecb10) #Trust in ECB
+results <- applyFunc("trust_ecb_tcc", "TCC", dataInfo)
+results <- rbind(results, NA, NA, NA, NA, NA)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among EU-15
+dataInfo <- list(eu18, eu19, eu20, eu21, eu22, eu23, eu24, eu25, eu26, eu27, eu28, eu29, eu30, eu31, eu48) #Trust in EU
+results <- applyFunc("trust_eu_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep15, ep16, ep17, ep18, ep19, ep20, ep21, ep22, ep23, ep24, ep25, ep26, ep27, ep28, ep44) #Trust in EP
+results <- applyFunc("trust_ep_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec15, ec16, ec17, ec18, ec19, ec20, ec21, ec22, ec23, ec24, ec25, ec26, ec27, ec28, ec44) #Trust in EC
+results <- applyFunc("trust_ec_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb15, ecb16, ecb17, ecb18, ecb19, ecb20, ecb21, ecb22, ecb23, ecb24, ecb25, ecb26, ecb27, ecb28, ecb44) #Trust in ECB
+results <- applyFunc("trust_ecb_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among EU-25
+dataInfo <- list(eu32, eu33, eu34, eu35, eu36, eu37, eu38, eu39, eu40, eu41, eu42, eu43, eu44, eu45, eu49) #Trust in EU
+results <- applyFunc("trust_eu_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep29, ep30, ep31, ep32, ep33, ep34, ep35, ep36, ep37, ep38, ep39, ep40, ep41, ep42, ep45) #Trust in EP
+results <- applyFunc("trust_ep_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec29, ec30, ec31, ec32, ec33, ec34, ec35, ec36, ec37, ec38, ec39, ec40, ec41, ec42, ec45) #Trust in EC
+results <- applyFunc("trust_ec_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb29, ecb30, ecb31, ecb32, ecb33, ecb34, ecb35, ecb36, ecb37, ecb38, ecb39, ecb40, ecb41, ecb42, ecb45) #Trust in ECB
+results <- applyFunc("trust_ecb_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+trust_eur$year <- c(2004:2018)
+
+
+#####Reshaping from wide to long
+trust_eur <- to_long(trust_eur, "group", c("trust_eu", "trust_ep", "trust_ec", "trust_ecb"), 
+                    c("trust_eu_gcc", "trust_eu_tcc", "trust_eu_eu15", "trust_eu_eu25"),
+                    c("trust_ep_gcc", "trust_ep_tcc", "trust_ep_eu15", "trust_ep_eu25"),
+                    c("trust_ec_gcc", "trust_ec_tcc", "trust_ec_eu15", "trust_ec_eu25"),
+                    c("trust_ecb_gcc", "trust_ecb_tcc", "trust_ecb_eu15", "trust_ecb_eu25"))
+
+trust_eur$group <- dplyr::recode(trust_eur$group, "trust_eu_gcc" = "Greek-Cypriots", "trust_eu_tcc" = "Turkish-Cypriots", "trust_eu_eu15" = "EU-15", "trust_eu_eu25" = "EU-25")
+trust_eur
+
+
+#Calculating combined Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+trust_eur$weight <- c(552213/709314, 552213/709314, 552213/709314, 596752/753853, 638900/782126, 638900/782126, 651400/794626, 660400/803626, 651400/794626, 660400/803626, 724084/867310, 724084/867310, 724084/867310, 741308/884534, 741308/884534, 
+                     157101/709314, 157101/709314, 157101/709314, 157101/753853, 143226/782126, 143226/782126, 143226/794626, 143226/803626, 143226/794626, 143226/803626, 143226/867310, 143226/867310, 143226/867310, 143226/884534, 143226/884534,
+                     rep(NA, 30))
+
+trust_eur <- trust_eur %>% mutate(trust_eu_w = trust_eu * weight)
+trust_eur <- trust_eur %>% mutate(trust_ep_w = trust_ep * weight)
+trust_eur <- trust_eur %>% mutate(trust_ec_w = trust_ec * weight)
+trust_eur <- trust_eur %>% mutate(trust_ecb_w = trust_ecb * weight)
+
+trust_eur_cyp <- trust_eur %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+trust_eur_cyp <- trust_eur_cyp %>% select(-"trust_eu", -"trust_ep", -"trust_ec", -"trust_ecb", -"weight")
+
+
+trust_eur_cyp <- trust_eur_cyp %>% 
+  group_by(year) %>% 
+  summarise(trust_eu = sum(trust_eu_w),
+            trust_ep = sum(trust_ep_w),
+            trust_ec = sum(trust_ec_w),
+            trust_ecb = sum(trust_ecb_w))
+
+
+trust_eur_cyp$group <- c("Cypriots")
+trust_eur_cyp$weight <- c(NA)
+trust_eur$trust_eu_w <- NULL
+trust_eur$trust_ep_w <- NULL
+trust_eur$trust_ec_w <- NULL
+trust_eur$trust_ecb_w <- NULL
+
+
+#####Function to convert to percentages
+mult_one <- function(var1)
+{
+  var1*100 
+}
+
+
+trust_eur <- rbind(trust_eur, trust_eur_cyp)
+trust_eur <- trust_eur %>% mutate_at(vars(-year, -group, -weight), mult_one)
+trust_eur$group <- as.factor(trust_eur$group)
+rm(trust_eur_cyp)
+
+save(trust_eur, file=("trust_eur.rdata"))
+```
+
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(tidyr)
+library(plotly)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_eur.rdata")
+
+
+#####Plots
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5)
+
+
+#Annotation (individual title) attributes
+anot_trust_eu_cyp <- list(
+  text = "Trust European Union",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_ep_cyp <- list(
+  text = "Trust European Parliament",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_ec_cyp <- list(
+  text = "Trust European Commission",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)  
+
+anot_trust_ecb_cyp <- list(
+  text = "Trust European Central Bank",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_eur_inst_cyp <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.28,
+  y = 0.1,
+  showarrow = FALSE
+)
+
+#Cypriots;9702A7
+#Turkish-Cypriots; FFCF00
+#Greek-Cypriots; 00A876
+#EU-15; FF7800
+#EU-25; 009999
+
+
+#Trust in EU institutions: Cypriots
+trust_eur_cyp <- trust_eur %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cypriots")
+trust_eur_cyp$weight <- NULL
+
+#Trust in EU
+plot_trust_eu_cyp <- plot_ly(trust_eur_cyp, y = ~trust_eu, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                             marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_eu_cyp)
+             
+                               
+#Trust in EP                                                       
+plot_trust_ep_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ep, x= ~year, color = ~group, type = "scatter",
+                              mode = "lines+markers",
+                              line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                              marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = F) %>%
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ep_cyp)
+  
+
+#Trust in EC  
+plot_trust_ec_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ec, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                             marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = F) %>%
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ec_cyp) 
+
+
+#Trust in ECB
+pal <- c("#9702A7", "#00A876", "#FFCF00")
+plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~group, colors= ~pal, type = "scatter",
+                              mode = "lines+markers",
+                              line = list(width = 3), 
+                              marker = list(size = 6),
+                              legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ecb_cyp)  
+
+
+#Combining plots for Cypriots
+subplot_trust_eu_inst_cyp <- plotly::subplot(plot_trust_eu_cyp, plot_trust_ep_cyp, plot_trust_ec_cyp, plot_trust_ecb_cyp, 
+                                             nrows = 2, margin = 0.12, shareX = FALSE, shareY = FALSE, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = anot_trust_eur_inst_cyp) 
+
+
+
+#Trust in EU institutions: EU-15 & EU-25
+trust_eur_eu <- trust_eur %>% filter(group == "Cypriots" | group == "EU-15" | group == "EU-25")
+trust_eur_eu$weight <- NULL
+
+
+#Trust in EU
+plot_trust_eu_eu <- plot_ly(trust_eur_eu, y = ~trust_eu, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                             marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                             legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_eu_cyp)
+
+
+#Trust in EP
+plot_trust_ep_eu <- plot_ly(trust_eur_eu, y = ~trust_ep, x= ~year, color = ~group, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                            marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ep_cyp)
+
+
+#Trust in EC
+plot_trust_ec_eu <- plot_ly(trust_eur_eu, y = ~trust_ec, x= ~year, color = ~group, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                            marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ec_cyp)
+
+
+#Trust in ECB
+pal2 <- c("#9702A7", "#009999","#FF7800")
+trust_eur_eu <- trust_eur_eu %>% drop_na("trust_ecb")
+plot_trust_ecb_eu <- plot_ly(trust_eur_eu, y = ~trust_ecb, x= ~year, color = ~group, colors = ~pal2, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(width = 3), 
+                            marker = list(size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ecb_cyp)
+
+
+#Combining plots for EU-15 & EU-25
+subplot_trust_eu_inst_eu <- plotly::subplot(plot_trust_eu_eu, plot_trust_ep_eu, plot_trust_ec_eu, plot_trust_ecb_eu, 
+                                             nrows = 2, margin = 0.12, shareX = FALSE, shareY = FALSE, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = anot_trust_eur_inst_cyp) 
+```
+
+<br>
+
+>The second part of the series examining the extent to which global trends in disaffection towards political institutions manifest themselves in Cyprus, focuses on European Union institutions. The analysis finds that trust in the EU and its institutions (European Parliament, European Commission, European Central Bank) fell among Cypriots from 2004 onward. However, this was mostly due to lower trust among Greek-Cypriots, as trust is higher and remained more stable for Turkish-Cypriots during this period. Soon after Cyprus joined the EU, Greek-Cypriots were more trusting of its institutions than Turkish-Cypriots and EU citizens overall. In recent years though, Turkish-Cypriots tend to be 2-3 times more trusting of EU institutions than Greek-Cypriots. Trust in European institutions among EU citizens as a whole experienced fewer fluctuations and less decline during this period.
+<br><br>
+__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Θεσμικά Όργανα της Ευρωπαϊκής Ένωσης__
+<br><br>
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Avrupa Birliği Kurumları__
+Serideki ikinci kısım küresel eğilimlerindeki memnuniyetsizliğin Kıbrıs’daki derecesini inceliyor. Araştırma Kıbrıslıların AB ve ceşitli kurumlarına (Avrupa Parlamentosu, Avrupa Komisyonu, Avrupa Merkez Bankası) güveninin 2004 den beri azaldığını gösteriyor. Ancak, bu güven kaybı Kıbrıslı Rumlardan kaynaklanıyor. Kıbrıslı Rumlara kıyasla Kıbrıslı Türkler AB ve kurumlarına istikrarlı bir şekilde daha çok güveniyor. Kıbrıs’ın AB ye katılmasından hemen sonra, Kıbrıslı Rumlar, Kıbrıslı Türkler ve diğer AB vatandaşlarına göre AB kurumlarına daha cok güveniyordu. Son yıllarda Kıbrıslı Türklerin güven eğilimleri Kıbrıslı Rumların güveninin 2-3 katına artarken, aynı dönemde, diğer AB vatandaşlarının kurumlara güveninde daha az dalgalanmalar ve düşüş gözlemlendi.
+
+<br>
+_The [first part](https://www.c-pot.org/post/disaffection-with-parties){target="_blank"} of this series discussed how the decline of trust in political parties in Cyprus has led to Cypriots becoming among the least trusting in the EU._
+<br><br>
+The second part of the series on trends in disaffection towards political institutions focuses on European Union institutions. If the EU is to play a constructive role in supporting peace-building in Cyprus, knowing how Cypriots feel about the EU and its institutions is vital. Eurobarometer data from 2004-2018 are used to explore trust towards the EU overall and three specific institutions: the European Commission (EC), European Parliament (EP) and European Central Bank (ECB). 
+<br>
+People do not differentiate significantly between the various EU institutions. With the exception of the EP, which the public tends to trust slightly more, the levels in trust for the other three institutions are about the same.
+<br>
+The most striking trend concerns the diverging trends among Turkish-Cypriots and Greek-Cypriots. Trust in EU institutions among Turkish-Cypriots was lower than Greek-Cypriots in the years following Cyprus’ entry into the EU. However, trust among Greek-Cypriots took a significant dip in 2012, coinciding with the financial crisis in the Republic of Cyprus and the haircut of banks. Naturally, trust in the ECB experienced the largest decline. From that point onwards Greek-Cypriots were less trusting than Turkish-Cypriots. This was most pronounced for the EP, where trust among Turkish-Cypriots peaked at 70% in 2017, 33% higher than Greek-Cypriots and 26% higher than the EU average. In recent years trust among Greek-Cypriots began to trend upward and the gap between the two communities has decreased.
+
+<br>
+`r subplot_trust_eu_inst_cyp`
+_Interactive visualizations: hover over to display values, double click to zoom, click legend to hide/show lines_
+<br>
+
+Similarly, prior to 2012 Cypriots had higher levels of trust in EU institutions than the average EU citizen, typically around 8-10% higher. Cypriots’ trust began dipping below the overall EU levels after the financial crisis, mostly driven by the decline among Greek-Cypriots. By 2018, levels were analogous to EU averages. During this period, trust in EU institutions among Europeans as a whole experienced fewer fluctuations and lower decline. 
+<br>
+`r subplot_trust_eu_inst_eu`
+<br>
+Taken together, these two blog posts on political disaffection show that while Cypriots are generally distrustful of political processes, they tend to trust EU processes more than their own. Notably, Turkish-Cypriots are significantly more trusting of political processes than Greek-Cypriots. Even though trust has declined in both communities, the level of decline for Turkish-Cypriots has not been as severe. These trends are not unique to Cyprus of course, as political disaffection is widespread in western democracies and has been declining since the 1960s and 70s (Norris, 2011). Nevertheless, Cypriots tend to be among the least trusting in Europe, indicating the severity to which they feel that there is a political and institutional failure to meaningfully engage with them and solve the issues they face. 
+<br><br>
+__Data sources__  
+Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  
+
+<br>
+__References__  
+Norris, P. (2011). _Democratic Deficit: Critical Citizens Revisited_. New York: Cambridge University Press.<br>
+
