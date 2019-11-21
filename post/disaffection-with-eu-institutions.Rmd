@@ -1,5 +1,5 @@
 ---
-title: 'How disaffected are Cypriots with Political Institutions?: European Union Institutions'
+title: 'How Disaffected are Cypriots with Political Institutions?: European Union Institutions'
 author: 'Yioryos Nardis'
 date: '2019-11-18'
 slug: disaffection-with-eu-institutions
@@ -556,14 +556,14 @@ anot_trust_ecb_cyp <- list(
 
 anot_trust_eur_inst_cyp <- list(
   text = "www.c-pot.org",
-  font = list(family = "avenir", size = 20, color = "#484848"),
+  font = list(family = "avenir", size = 18, color = "#484848"),
   xref = "paper",
   yref = "paper",
   yanchor = "bottom",
   xanchor = "bottom",
   align = "right",
   x = 1.28,
-  y = 0.1,
+  y = 0.38,
   showarrow = FALSE
 )
 
@@ -584,7 +584,7 @@ plot_trust_eu_cyp <- plot_ly(trust_eur_cyp, y = ~trust_eu, x= ~year, color = ~gr
                              line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
                              marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
                              legendgroup = ~group, showlegend = T) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_eu_cyp)
@@ -596,7 +596,7 @@ plot_trust_ep_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ep, x= ~year, color = ~gr
                               line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
                               marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
                              legendgroup = ~group, showlegend = F) %>%
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=24), range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ep_cyp)
@@ -608,7 +608,7 @@ plot_trust_ec_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ec, x= ~year, color = ~gr
                              line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
                              marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
                              legendgroup = ~group, showlegend = F) %>%
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ec_cyp) 
@@ -621,7 +621,7 @@ plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~
                               line = list(width = 3), 
                               marker = list(size = 6),
                               legendgroup = ~group, showlegend = F) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ecb_cyp)  
@@ -629,10 +629,9 @@ plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~
 
 #Combining plots for Cypriots
 subplot_trust_eu_inst_cyp <- plotly::subplot(plot_trust_eu_cyp, plot_trust_ep_cyp, plot_trust_ec_cyp, plot_trust_ecb_cyp, 
-                                             nrows = 2, margin = 0.12, shareX = FALSE, shareY = FALSE, 
+                                             nrows = 4, margin = 0.04, shareX = TRUE, shareY = FALSE, 
                                              titleY = TRUE) %>% 
-  layout(annotations = anot_trust_eur_inst_cyp) 
-
+  layout(annotations = anot_trust_eur_inst_cyp, autosize = F, width = 750, height = 940) 
 
 
 #Trust in EU institutions: EU-15 & EU-25
@@ -646,7 +645,7 @@ plot_trust_eu_eu <- plot_ly(trust_eur_eu, y = ~trust_eu, x= ~year, color = ~grou
                              line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
                              marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
                              legendgroup = ~group, showlegend = T) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_eu_cyp)
@@ -658,7 +657,7 @@ plot_trust_ep_eu <- plot_ly(trust_eur_eu, y = ~trust_ep, x= ~year, color = ~grou
                             line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
                             marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
                             legendgroup = ~group, showlegend = F) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=24), range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ep_cyp)
@@ -670,7 +669,7 @@ plot_trust_ec_eu <- plot_ly(trust_eur_eu, y = ~trust_ec, x= ~year, color = ~grou
                             line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
                             marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
                             legendgroup = ~group, showlegend = F) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ec_cyp)
@@ -684,7 +683,7 @@ plot_trust_ecb_eu <- plot_ly(trust_eur_eu, y = ~trust_ecb, x= ~year, color = ~gr
                             line = list(width = 3), 
                             marker = list(size = 6),
                             legendgroup = ~group, showlegend = F) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ecb_cyp)
@@ -692,39 +691,44 @@ plot_trust_ecb_eu <- plot_ly(trust_eur_eu, y = ~trust_ecb, x= ~year, color = ~gr
 
 #Combining plots for EU-15 & EU-25
 subplot_trust_eu_inst_eu <- plotly::subplot(plot_trust_eu_eu, plot_trust_ep_eu, plot_trust_ec_eu, plot_trust_ecb_eu, 
-                                             nrows = 2, margin = 0.12, shareX = FALSE, shareY = FALSE, 
+                                             nrows = 4, margin = 0.03, shareX = TRUE, shareY = FALSE, 
                                              titleY = TRUE) %>% 
-  layout(annotations = anot_trust_eur_inst_cyp) 
+  layout(annotations = anot_trust_eur_inst_cyp, autosize = F, width = 685, height = 940)
 ```
 
 <br>
 
->The second part of the series examining the extent to which global trends in disaffection towards political institutions manifest themselves in Cyprus, focuses on European Union institutions. The analysis finds that trust in the EU and its institutions (European Parliament, European Commission, European Central Bank) fell among Cypriots from 2004 onward. However, this was mostly due to lower trust among Greek-Cypriots, as trust is higher and remained more stable for Turkish-Cypriots during this period. Soon after Cyprus joined the EU, Greek-Cypriots were more trusting of its institutions than Turkish-Cypriots and EU citizens overall. In recent years though, Turkish-Cypriots tend to be 2-3 times more trusting of EU institutions than Greek-Cypriots. Trust in European institutions among EU citizens as a whole experienced fewer fluctuations and less decline during this period.
+>The second part of the series examining the extent to which global trends in disaffection towards political institutions manifest themselves in Cyprus, focuses on European Union institutions. The analysis finds that trust in the EU and its institutions (European Parliament, European Commission, European Central Bank) fell among Cypriots from 2011 onward. However, this is mostly due to lower trust among Greek-Cypriots, as trust is higher and remained more stable for Turkish-Cypriots during this period. Soon after Cyprus joined the EU, Greek-Cypriots were more trusting of its institutions than Turkish-Cypriots and EU citizens overall. In recent years though, Turkish-Cypriots tend to trust EU institutions around twice as much as Greek-Cypriots.  Trust in European institutions among EU citizens as a whole experienced fewer fluctuations and less decline during this period.
 <br><br>
-__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Θεσμικά Όργανα της Ευρωπαϊκής Ένωσης__
+__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Θεσμικά Όργανα της Ευρωπαϊκής Ένωσης__  
+Το δεύτερο μέρος της σειράς που εξετάζει αν οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια έναντι στους πολιτικούς θεσμούς εκδηλώνονται στην Κύπρο, επικεντρώνεται στα θεσμικά όργανα της Ευρωπαϊκής Ένωσης. Η ανάλυση διαπιστώνει ότι το ποσοστό των Κυπρίων που εμπιστεύονται την ΕΕ και τους θεσμούς της (Ευρωπαϊκό Κοινοβούλιο, Ευρωπαϊκή Επιτροπή, Ευρωπαϊκή Κεντρική Τράπεζα) μειώθηκε από το 2011 και μετά. Ωστόσο, αυτό οφείλεται κυρίως στη μειωμένη εμπιστοσύνη μεταξύ των Ελληνοκυπρίων, μιας και οι Τουρκοκύπριοι επέδειξαν πιο ψηλό και πιο σταθερό επίπεδο εμπιστοσύνης κατά την περίοδο αυτή. Λίγο μετά την ένταξη της Κύπρου στην ΕΕ, οι Ελληνοκύπριοι εμπιστευόταν περισσότερο τα θεσμικά της όργανα από ό,τι οι Τουρκοκύπριοι και οι πολίτες της ΕΕ συνολικά. Πρόσφατα όμως, οι Τουρκοκύπριοι τείνουν να εμπιστεύονται τα θεσμικά όργανα της ΕΕ περίπου δυο φορές περισσότερο από τους Ελληνοκύπριους. Η εμπιστοσύνη στα θεσμικά όργανα της ΕΕ μεταξύ των πολιτών της ΕΕ συνολικά παρουσίασε λιγότερες διακυμάνσεις και λιγότερη μείωση.
 <br><br>
-__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Avrupa Birliği Kurumları__
-Serideki ikinci kısım küresel eğilimlerindeki memnuniyetsizliğin Kıbrıs’daki derecesini inceliyor. Araştırma Kıbrıslıların AB ve ceşitli kurumlarına (Avrupa Parlamentosu, Avrupa Komisyonu, Avrupa Merkez Bankası) güveninin 2004 den beri azaldığını gösteriyor. Ancak, bu güven kaybı Kıbrıslı Rumlardan kaynaklanıyor. Kıbrıslı Rumlara kıyasla Kıbrıslı Türkler AB ve kurumlarına istikrarlı bir şekilde daha çok güveniyor. Kıbrıs’ın AB ye katılmasından hemen sonra, Kıbrıslı Rumlar, Kıbrıslı Türkler ve diğer AB vatandaşlarına göre AB kurumlarına daha cok güveniyordu. Son yıllarda Kıbrıslı Türklerin güven eğilimleri Kıbrıslı Rumların güveninin 2-3 katına artarken, aynı dönemde, diğer AB vatandaşlarının kurumlara güveninde daha az dalgalanmalar ve düşüş gözlemlendi.
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Avrupa Birliği Kurumları__  
+Serideki ikinci kısım küresel eğilimlerindeki memnuniyetsizliğin Kıbrıs’daki derecesini inceliyor. Araştırma Kıbrıslıların AB ve ceşitli kurumlarına (Avrupa Parlamentosu, Avrupa Komisyonu, Avrupa Merkez Bankası) güveninin 2011 den beri azaldığını gösteriyor. Ancak, bu güven kaybı Kıbrıslı Rumlardan kaynaklanıyor. Kıbrıslı Rumlara kıyasla Kıbrıslı Türkler AB ve kurumlarına istikrarlı bir şekilde daha çok güveniyor. Kıbrıs’ın AB ye katılmasından hemen sonra, Kıbrıslı Rumlar, Kıbrıslı Türkler ve diğer AB vatandaşlarına göre AB kurumlarına daha cok güveniyordu. Son yıllarda Kıbrıslı Türklerin güven eğilimleri Kıbrıslı Rumların güveninin 2 katına artarken, aynı dönemde, diğer AB vatandaşlarının kurumlara güveninde daha az dalgalanmalar ve düşüş gözlemlendi.
 
 <br>
 _The [first part](https://www.c-pot.org/post/disaffection-with-parties){target="_blank"} of this series discussed how the decline of trust in political parties in Cyprus has led to Cypriots becoming among the least trusting in the EU._
 <br><br>
-The second part of the series on trends in disaffection towards political institutions focuses on European Union institutions. If the EU is to play a constructive role in supporting peace-building in Cyprus, knowing how Cypriots feel about the EU and its institutions is vital. Eurobarometer data from 2004-2018 are used to explore trust towards the EU overall and three specific institutions: the European Commission (EC), European Parliament (EP) and European Central Bank (ECB). 
+The second part of the series on trends in disaffection towards political institutions focuses on European Union institutions. If the EU is to play a constructive role in supporting peace-building in Cyprus, knowing how Cypriots feel about the EU and its institutions is vital. Eurobarometer data from 2004-2018 are used to explore trust towards the EU overall and three specific institutions: the European Commission (EC), European Parliament (EP) and European Central Bank (ECB).  
 <br>
-People do not differentiate significantly between the various EU institutions. With the exception of the EP, which the public tends to trust slightly more, the levels in trust for the other three institutions are about the same.
+People do not differentiate significantly between the various EU institutions. With the exception of the EP, which the public tends to trust slightly more, the levels in trust for the other three institutions are about the same.  
 <br>
 The most striking trend concerns the diverging trends among Turkish-Cypriots and Greek-Cypriots. Trust in EU institutions among Turkish-Cypriots was lower than Greek-Cypriots in the years following Cyprus’ entry into the EU. However, trust among Greek-Cypriots took a significant dip in 2012, coinciding with the financial crisis in the Republic of Cyprus and the haircut of banks. Naturally, trust in the ECB experienced the largest decline. From that point onwards Greek-Cypriots were less trusting than Turkish-Cypriots. This was most pronounced for the EP, where trust among Turkish-Cypriots peaked at 70% in 2017, 33% higher than Greek-Cypriots and 26% higher than the EU average. In recent years trust among Greek-Cypriots began to trend upward and the gap between the two communities has decreased.
 
 <br>
-`r subplot_trust_eu_inst_cyp`
-_Interactive visualizations: hover over to display values, double click to zoom, click legend to hide/show lines_
-<br>
-
+`r subplot_trust_eu_inst_cyp`  
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<br><br><br>
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_    <br><br><br>
 Similarly, prior to 2012 Cypriots had higher levels of trust in EU institutions than the average EU citizen, typically around 8-10% higher. Cypriots’ trust began dipping below the overall EU levels after the financial crisis, mostly driven by the decline among Greek-Cypriots. By 2018, levels were analogous to EU averages. During this period, trust in EU institutions among Europeans as a whole experienced fewer fluctuations and lower decline. 
+
 <br>
-`r subplot_trust_eu_inst_eu`
-<br>
-Taken together, these two blog posts on political disaffection show that while Cypriots are generally distrustful of political processes, they tend to trust EU processes more than their own. Notably, Turkish-Cypriots are significantly more trusting of political processes than Greek-Cypriots. Even though trust has declined in both communities, the level of decline for Turkish-Cypriots has not been as severe. These trends are not unique to Cyprus of course, as political disaffection is widespread in western democracies and has been declining since the 1960s and 70s (Norris, 2011). Nevertheless, Cypriots tend to be among the least trusting in Europe, indicating the severity to which they feel that there is a political and institutional failure to meaningfully engage with them and solve the issues they face. 
+`r subplot_trust_eu_inst_eu`  
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<br><br><br>
+
+
+Taken together, these two blog posts on political disaffection show that while Cypriots are generally distrustful of political processes, they tend to trust EU processes more than their own. Notably, Turkish-Cypriots are significantly more trusting of political processes than Greek-Cypriots. Even though trust has declined in both communities, the level of decline for Turkish-Cypriots has not been as severe. These trends are not unique to Cyprus of course, as political disaffection is widespread in western democracies and has been declining since the 1960s and 70s (Norris, 2011). Nevertheless, Cypriots tend to be among the least trusting in Europe, indicating the severity to which they feel that there is a political and institutional failure to meaningfully engage with them and solve the issues they face.  
 <br><br>
 __Data sources__  
 Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  

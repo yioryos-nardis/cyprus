@@ -1,5 +1,5 @@
 ---
-title: 'How disaffected are Cypriots with Political Institutions? : Political Parties'
+title: 'How Disaffected are Cypriots with Political Institutions? : Political Parties'
 author: 'Yioryos Nardis'
 date: '2019-08-27'
 slug: disaffection-with-parties
@@ -541,10 +541,10 @@ plot_pm_cyp <- plot_ly(pm, y = ~pm, x= ~year, color = ~group, type = "scatter",
 
 >This two part series examines the extent to which global trends in disaffection towards political institutions also manifest themselves in Cyprus and how it compares to other EU countries. Trust towards political parties is examined in this first part of the series. The analysis finds that trust in parties has been declining over the past 15 years, particularly from 2014 onwards. In contrast, the EU as a whole experienced relative stability during this period. Turkish-Cypriots tend to be 2-3 times more trusting of political parties than Greek-Cypriots and slightly more likely to be members of one. The second part of the series will examine trust towards EU institutions.
 <br><br>
-__ΠόσοΔυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Πολιτικά Κόμματα__
-Αυτή η σειρά αποτελείται από δύο μέρη και εξετάζει το βαθμό στον οποίο οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια απέναντι στους πολιτικούς θεσμούς εκδηλώνονται και στην Κύπρο και πώς συγκρίνεται με άλλες χώρες της ΕΕ. Η εμπιστοσύνη προς τα πολιτικά κόμματα εξετάζεται σε αυτό το πρώτο μέρος της σειράς. Η ανάλυση διαπιστώνει ότι η εμπιστοσύνη προς κόμματα μειώνεται τα τελευταία 15 χρόνια, ιδιαίτερα από το 2014 και μετά. Αντιθέτως, η ΕΕ ως σύνολο αντιμετωπίσε σχετική σταθερότητα κατά τη διάρκεια αυτής της περιόδου. Οι Τουρκοκύπριοι τείνουν να είναι 2-3 φορές πιο εμπιστευτικοί των πολιτικών κομμάτων από τους Ελληνοκύπριους και λίγο πιο πιθανό να είναι μέλη ενός κόμματος. Το δεύτερο μέρος θα εξετάσει την εμπιστοσύνη προς τους θεσμούς της ΕΕ.
+__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Πολιτικά Κόμματα__<br>
+Αυτή η σειρά αποτελείται από δύο μέρη και εξετάζει τον βαθμό στον οποίο οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια έναντι στους πολιτικούς θεσμούς εκδηλώνονται στην Κύπρο και πώς συγκρίνεται με άλλες χώρες της ΕΕ. Η εμπιστοσύνη προς τα πολιτικά κόμματα εξετάζεται σε αυτό το πρώτο μέρος της σειράς. Η ανάλυση διαπιστώνει ότι η εμπιστοσύνη προς τα κόμματα μειώνεται τα τελευταία 15 χρόνια, ιδιαίτερα από το 2014 και μετά. Αντιθέτως, η ΕΕ συνολικά αντιμετωπίσε σχετική σταθερότητα κατά την περίοδο αυτή. Οι Τουρκοκύπριοι τείνουν να εμπιστεύονται τα πολιτικά κομμάτα σε ποσοστά 2-3 φορές πιο ψηλά από τους Ελληνοκύπριους και είναι λίγο πιο πιθανό να είναι μέλη ενός κόμματος. Το δεύτερο μέρος θα εξετάσει την εμπιστοσύνη προς τους θεσμούς της ΕΕ.
 <br><br>
-__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Siyasi Partiler__
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Siyasi Partiler__<br>
 Bu iki bolümlük seride global politik güven trendleri Kıbrıs’ta ve diğer Avrupa ülkeleri bağlamında ele alınmaktadır. İlk bölümde, politik partilere olan güven incelenmektedir. Ikinci bölümde, hükümet ve parlemantolara olan güven ele alınacaktır. Analizlere göre, Kıbrıs’ta politik güven son 15 yıldır azalmaktadır,özellikle 2004’ten beri. Buna karşın, aynı süre içerisinde Avrupa genelinin ortalamasında güven indeksinde bir azalma veya artma olmamıştır. Politik partilere Kıbrıslı Turkler, Kıbrıslı Rumlara gore 2-3 kat daha fazla güvenmektedir; ve aynı zamanda bir partiye üye olma olasılıkları Kıbrıslı Rumlara gore biraz daha yüksektir. Ikinci bölümde, Avrupa Birliği Kurumlarına olan güven ele alınacaktır.
 
 <br>
@@ -558,7 +558,7 @@ Trust in political parties among Cypriots, while already low, declined considera
 
 <br>
 `r plot_trust_pp_cyp`
-_Interactive visualizations: hover over to display values, double click to zoom, click legend to hide/show lines_
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_
 <br>
 
 Exploring generational differences reveals that today the differences across age are small and analogous for both communities. However, for Greek-Cypriots, even though trust in parties has fallen for all age groups since 2004, the largest declines were for older persons. In particular those aged 55 and older who typically were the most trusting of political parties. Where differences between younger and older persons were around 20% during the 2000s, by 2017 they fell to within 5%. Conversely, generational differences were less pronounced for Turkish-Cypriots over this time period. Again, trust was typically higher for older persons.
@@ -586,14 +586,14 @@ Greek-Cypriots are significantly less trusting of parties and less likely to be 
 <br><br>
 
 __Data sources__  
-_Trust in parties_
+_Trust in parties_  
 Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  
-_Party membership_
+_Party membership_  
 World Values Survey/European Values Study: WVS 5, EVS 4, WVS6  
 
 <br>
 __References__  
 Norris, P. (2011). _Democratic Deficit: Critical Citizens Revisited_. New York: Cambridge University Press.<br>
-Phileleftheros. (2017). [Available here.](http://www.philenews.com/eidiseis/politiki/article/467206/molis-10-500-neoi-psifoforoi-engrafikan-ston-katalog){target="_blank"}<br>
+_Phileleftheros._ (2017). [Available here.](http://www.philenews.com/eidiseis/politiki/article/467206/molis-10-500-neoi-psifoforoi-engrafikan-ston-katalog){target="_blank"}<br>
 van Biezen I. , Mair, P., & Poguntke, T. (2012). Going, going,…gone? The decline of party membership in contemporary Europe. _European Journal of Political Research_, 51, 24-56.  
 <br>
