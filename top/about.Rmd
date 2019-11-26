@@ -10,7 +10,7 @@ tags: []
 __About__  
 Welcome to Cyprus Public Opinion Trends (C-POT)!   
 <br>
-The blog provides non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data and to ensure transparency software code to replicate all analyses is provided. Occasional contributions from guest writers will also be featured.  
+The blog provides non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data, and to ensure transparency software code to replicate all analyses is provided. Occasional contributions from guest writers will also be featured.  
 <br>
 The blog is owned and maintained by Yioryos Nardis, Senior Researcher at the Institute for Social Research-Center for Political Studies at the University of Michigan.  
 <br>
@@ -28,7 +28,7 @@ This blog is provided for information purposes only. Anyone using and acting on 
 __Περί Ιστολογίου  __  
 Καλώς ορίσατε στις Τάσεις της Κοινής Γνώμης στην Κύπρο (Cyprus Public Opinion Trends – C-POT)!  
 
-Μέσο αυτού του ιστολογίου θα παρέχω ακομμάτιστες πληροφορίες και ποσοτική ανάλυση για τις στάσεις των Κυπρίων σχετικά με τα κοινωνικά, πολιτικά και πολιτιστικά θέματα που αντιμετωπίζει η κοινωνία τους. Ο στόχος του είναι να κάνει τις απόψεις των Κυπρίων πιο προσιτές για το ευρύτερο κοινό, δημοσιογράφους, ακαδημαϊκούς και επαγγελματίες της πολιτικής. Η συζήτηση της κοινής γνώμης των Ελληνοκυπρίων και Τουρκοκυπρίων θα είναι σημαντικό χαρακτηριστικό αυτής της προσπάθειας. Η ποσοτικές αναλύσεις θα βασίζονται σε δημοσίως διαθέσιμα δεδομένα από έρευνες επισκόπησης και για λόγους διαφάνειας, πληροφορίες που θα επιτρέπουν την αναπαραγωγή όλων των αναλύσεων θα δίνονται. Επίσης, κάποτε θα περιέχει και συνεισφορές από φιλοξενούμενους συγγραφείς.  
+Αυτό το ιστολόγιο παρέχει ακομμάτιστες πληροφορίες και ποσοτική ανάλυση για τις διαχρονικές στάσεις των Κυπρίων σχετικά με τα κοινωνικά, πολιτικά και πολιτιστικά θέματα που αντιμετωπίζει η κοινωνία τους. Ο στόχος του είναι να κάνει τις απόψεις των Κυπρίων πιο προσιτές για το ευρύτερο κοινό, δημοσιογράφους, ακαδημαϊκούς και επαγγελματίες της πολιτικής. Η συζήτηση της κοινής γνώμης των Ελληνοκυπρίων και Τουρκοκυπρίων θα είναι σημαντικό χαρακτηριστικό αυτής της προσπάθειας. Η ποσοτικές αναλύσεις βασίζονται σε δημοσίως διαθέσιμα δεδομένα από έρευνες επισκόπησης, και για λόγους διαφάνειας παρέχονται πληροφορίες που επιτρέπουν την αναπαραγωγή όλων των αναλύσεων. Επίσης, κάποτε θα περιέχει και συνεισφορές από φιλοξενούμενους συγγραφείς.  
 <br>
 Το ιστολόγιο διατηρείται από τον Γιώργο Ναρδή, Ανώτερος Ερευνητής στο Ινστιτούτο Κοινωνικής Έρευνας-Κέντρο Πολιτικών Μελετών στο Πανεπιστήμιο του Μίσιγκαν (ΗΠΑ).  
 <br>
