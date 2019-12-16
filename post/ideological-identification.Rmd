@@ -436,7 +436,7 @@ anot_logo <- list(
   showarrow = FALSE
 )
 
-pal <- c("#4477aa","#228833","#ee6677","#bbbbbb")
+pal <- c("#bbbbbb","#228833","#ee6677","#4477aa")
 
 plot_ideo_cat_gcc <- plot_ly(ideo_cat_gcc, y = ~value, x= ~year, 
                              color = ~ideology, colors = pal, 
