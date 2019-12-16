@@ -1,0 +1,522 @@
+---
+title: 'Ideological Identification in Cyprus'
+author: 'Yioryos Nardis'
+date: '2019-12-16'
+slug: ideological-identification
+categories: []
+tags:
+  - politics
+subtitle: ''
+description: ''
+image: ''
+---
+
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access Eurobarometer data files from websites of EU Open Data Portal, ICPSR, or GESIS
+load("EB2004.62.rdata")
+load("EB2005.63.4.rdata")
+load("EB2006.65.2.rdata")
+load("EB2007.68.1.rdata")
+load("EB2008.70.1.rdata")
+load("EB2009.71.3.rdata")
+load("EB2010.74.2.rdata")
+load("EB2011.75.3.rdata")
+load("EB2014.81.4.rdata")
+load("EB2015.84.3.rdata")
+load("EB2016.85.2.rdata")
+load("EB2017.87.3.rdata")
+load("EB2018.90.3.rdata")
+
+#####Recoding variables for 2018 dataframe#####  
+#Country variables
+EB2018.90.3$country1 <- car::recode(EB2018.90.3$country, as.factor = T, "'1' = 'France'; '2' = 'Belgium'; '3' = 'Netherlands';
+'5' = 'Italy'; '6' = 'Luxembourg'; '7' = 'Denmark'; '8' = 'Ireland'; '9' = 'UK';
+'11' = 'Greece'; '12' = 'Spain'; '13' = 'Portugal'; '16' = 'Finland'; '17' = 'Sweden';
+'18' = 'Austria'; '20' = 'Czech Republic'; '21' = 'Estonia'; '22' = 'Hungary';
+'23' = 'Latvia'; '24' = 'Lithuania'; '25' = 'Malta'; '26' = 'Poland'; '27' = 'Slovakia'; 
+'28' = 'Slovenia'; '29' = 'Bulgaria'; '30' = 'Romania'; else = NA")
+
+EB2018.90.3$germany <- car::recode(EB2018.90.3$country, as.factor = T, "'4' = 'W Germany'; '14' = 'E Germany'; else = NA") 
+EB2018.90.3$germany <- car::recode(EB2018.90.3$germany, as.factor = T, "'W Germany' = 'Germany'; 'E Germany' = 'Germany'; else = NA") 
+EB2018.90.3$cyprus <- car::recode(EB2018.90.3$country, as.factor = T, "'19' = 'Greek-Cypriots'; '33' = 'Turkish-Cypriots'; else = NA")
+
+EB2018.90.3$country2 <- car::recode(EB2018.90.3$country, as.factor = T, "'1' = 'France'; '2' = 'Belgium'; '3' = 'Netherlands';
+'5' = 'Italy'; '6' = 'Luxembourg'; '7' = 'Denmark'; '8' = 'Ireland'; '9' = 'UK';
+'11' = 'Greece'; '12' = 'Spain'; '13' = 'Portugal'; '16' = 'Finland'; '17' = 'Sweden';
+'18' = 'Austria'; '19' = 'GCC'; '20' = 'Czech Republic'; '21' = 'Estonia'; '22' = 'Hungary';
+'23' = 'Latvia'; '24' = 'Lithuania'; '25' = 'Malta'; '26' = 'Poland'; '27' = 'Slovakia'; 
+'28' = 'Slovenia'; '29' = 'Bulgaria'; '30' = 'Romania'; '33' = 'TCC'")
+
+#EU-28 indicator variable
+table(EB2018.90.3$eu28)
+EB2018.90.3$eu28 <- as.factor(EB2018.90.3$eu28)
+str(EB2018.90.3$eu28)
+
+#10-point left-right ideology variable
+describe(EB2018.90.3$d1)
+EB2018.90.3$d1_rec <- as.numeric(EB2018.90.3$d1)
+EB2018.90.3$d1_rec[EB2018.90.3$d1_rec > 10] <- NA
+str(EB2018.90.3$d1_rec)
+describe(EB2018.90.3$d1_rec)
+
+#Gender
+#Male=1; Female=2
+describe(EB2018.90.3$d10)
+EB2018.90.3$d10_fac <- as.factor(EB2018.90.3$d10)
+EB2018.90.3$d10_fac <-
+  recode_factor(EB2018.90.3$d10_fac, '1' = "Male", '2' = "Female")
+describe(EB2018.90.3$d10_fac)
+str(EB2018.90.3$d10_fac)
+
+save(EB2018.90.3, file=("EB2018.90.3.rdata"))
+
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#First function calling 'Func'. Calcuates weighted survey estimates for one factor level of given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#Second function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc2  <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:4) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Function to convert to percentages
+mult_one <- function(var1)
+{
+  round((var1*100), 1) 
+}
+
+
+
+######Analysis 1: Cyprus vs EU in 2018
+#Lists with data, weights, groups and variables to pass into survey estimate function
+
+id1 <- list(passedData = EB2018.90.3, passedWeights="w1", group="cyprus", estimate="d1_rec") #Cyprus
+id2 <- list(passedData = EB2018.90.3, passedWeights="w3", group="germany", estimate="d1_rec") #Germany
+id3 <- list(passedData = EB2018.90.3, passedWeights="w23", group="eu28", estimate="d1_rec") #EU-28
+
+
+#Calculating Left-Right Ideology mean
+dataInfo <- list(id1)
+ideology <- applyFunc("ideology_gcc", "Greek-Cypriots", dataInfo) #GCC
+
+dataInfo <- list(id1)
+results <- applyFunc("ideology_tcc", "Turkish-Cypriots", dataInfo) #TCC
+ideology <- cbind(ideology, results)
+
+dataInfo <- list(id2)
+results <- applyFunc("ideology_ger", "Germany", dataInfo) #Germany
+ideology <- cbind(ideology, results)
+
+dataInfo <- list(id3)
+results <- applyFunc("ideology_eu28", "1", dataInfo) #EU-28
+ideology <- cbind(ideology, results)
+
+
+#Reshaping from wide to long
+ideology <- ideology %>% gather(group, ideology, ideology_gcc:ideology_eu28)
+
+ideology$group <- dplyr::recode(ideology$group, "ideology_gcc" = "Greek-Cypriots", "ideology_tcc" = "Turkish-Cypriots", "ideology_ger" = "Germany", "ideology_eu28" = "EU-28")
+
+
+#Calculating combined Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+ideology$weight <-c(741308/884534, 143226/884534, NA, NA)
+ideology <- ideology %>% mutate(ideology_w = ideology * weight)
+
+ideology_cyp <- ideology %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+ideology_cyp <- ideology_cyp %>% select(-"ideology", -"weight")
+
+ideology_cyp <- ideology_cyp %>% 
+  summarise(ideology = sum(ideology_w))
+
+ideology_cyp$group <- c("Cyprus (GCC & TCC)")
+ideology <- ideology %>% select(-"ideology_w", -"weight")
+ideology <- rbind(ideology, ideology_cyp)
+
+
+#Calculating left-right ideology mean for all EU apart from Cyprus & Germany
+#Adding EB complex survey design & calculating ideology
+EB2018.90.3_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = EB2018.90.3)
+EU_count <- svyby(~d1_rec, ~country1, EB2018.90.3_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+
+EU_count <- as.data.frame(EU_count)
+EU_count <- EU_count %>% select(-"se")
+EU_count <- EU_count %>% rename(group = country1, ideology = d1_rec) 
+
+#Dataframe with all groups
+ideology_all <- rbind(ideology, EU_count)
+ideology_all$ideology <- round(ideology_all$ideology, 1) 
+ideology_all$group <- factor(ideology_all$group, levels = ideology_all$group) 
+
+#Dataframe for Cyprus commnuities & EU-28
+ideology_cyp <- ideology_all %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cyprus" | group == "EU-28")
+
+#Dataframe for groups without separate Cyprus communities
+ideology_eu <- ideology_all %>% filter(group != "Greek-Cypriots" & group != "Turkish-Cypriots" & group != "EU-28")
+
+
+######Analysis 2: Calculating left-right ideology by gender for Cyprus and EU-28
+gcc <- EB2018.90.3 %>% filter(cyprus == "Greek-Cypriots")
+tcc <- EB2018.90.3 %>% filter(cyprus == "Turkish-Cypriots")
+
+EB2018.90.3_gcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = gcc)
+gcc_gen <- svyby(~d1_rec, ~d10_fac, EB2018.90.3_gcc_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+gcc_gen$group <- "Greek-Cypriots"
+
+EB2018.90.3_tcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = tcc)
+tcc_gen <- svyby(~d1_rec, ~d10_fac, EB2018.90.3_tcc_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+tcc_gen$group <- "Turkish-Cypriots"
+
+EB2018.90.3_eu_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w23, data = EB2018.90.3)
+eu28_gen <- svyby(~d1_rec, ~~d10_fac, EB2018.90.3_eu_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+eu28_gen$group <- "EU-28"
+
+ideology_gen <- as.data.frame(rbind(gcc_gen, tcc_gen, eu28_gen))
+ideology_gen <- ideology_gen %>% rename(gender = d10_fac, ideology = d1_rec) 
+ideology_gen$ideology <- round(ideology_gen$ideology, 1) 
+ideology_gen$se <- round(ideology_gen$se, 2) 
+ideology_gen <- ideology_gen %>% mutate(group = factor(group, levels = c("EU-28", "Turkish-Cypriots", "Greek-Cypriots")))
+ideology_gen <- ideology_gen %>% mutate(gender = factor(gender, levels = c("Female", "Male")))
+
+save(ideology_gen, file=("ideology_gen.rdata"))
+save(ideology_eu, file=("ideology_eu.rdata"))
+
+
+######Analysis 3: Left-right ideology categories over time for Cyprus
+#No data for Turkish Cypriots, 2012-2013
+
+#Lists with data, weights, groups and variables to pass into survey estimate function
+id4 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V423_fac")
+id5 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V405_fac")
+id6 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3305_fac")
+id7 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V415_fac")
+id8 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V665_fac")
+id9 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id10 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V595_fac")
+id11 <- list(passedData = EB2011.75.3, passedWeights="v8", group="v6", estimate="v608_fac")
+id12 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id13 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id14 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id15 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id16 <- list(passedData = EB2018.90.3, passedWeights="w1", group="country2", estimate="d1r1_fac")
+
+
+
+#####Calculating Left-Right Ideology Groups
+#Cyprus
+dataInfo <- list(id4, id5, id6, id7, id8, id9, id10, id11, id12, id13, id14, id15, id16) 
+results_gcc <- applyFunc2("GCC", dataInfo)
+results_gcc <- results_gcc[1:4,]
+colnames(results_gcc)<- c("GCC_2004","GCC_2005","GCC_2006","GCC_2007","GCC_2008","GCC_2009","GCC_2010","GCC_2011","GCC_2014","GCC_2015","GCC_2016","GCC_2017","GCC_2018")
+
+results_tcc <- applyFunc2("TCC", dataInfo)
+results_tcc <- results_tcc[1:4,]
+colnames(results_tcc)<- c("TCC_2004","TCC_2005","TCC_2006","TCC_2007","TCC_2008","TCC_2009","TCC_2010","TCC_2011","TCC_2014","TCC_2015","TCC_2016","TCC_2017","TCC_2018")
+
+ideo_cat <- cbind(results_gcc, results_tcc)
+ideo_cat <- mapply(mult_one,ideo_cat)
+ideo_cat <- as.data.frame(ideo_cat)
+
+ideo_cat<- ideo_cat %>% gather()
+ideo_cat$ideology <- c("Left", "Centre", "Right", " Don't Know")
+ideo_cat$ideology <- as.factor(ideo_cat$ideology)
+
+#Creating year and Cyprus group variables
+ideo_cat$year <- ideo_cat$key
+ideo_cat$year <- gsub("GCC_", "", ideo_cat$year)
+ideo_cat$year <- gsub("TCC_", "", ideo_cat$year)
+ideo_cat$year <- as.numeric(ideo_cat$year)
+
+ideo_cat <- ideo_cat %>% rename(group = key) 
+ideo_cat$group <- gsub("[0-9]*", "", ideo_cat$group)
+ideo_cat$group <- gsub("_", "", ideo_cat$group)
+ideo_cat$group <- as.factor(ideo_cat$group) 
+ideo_cat$group <- dplyr::recode(ideo_cat$group, "GCC" = "Greek-Cypriots", "TCC" = "Turkish-Cypriots")
+
+save(ideo_cat, file=("ideo_cat.rdata"))
+load("ideo_cat.rdata")
+```
+
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideo_cat.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideology_eu.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideology_gen.rdata")
+
+#####Plots
+
+#Analysis 1: Divergent lollipop plot of left-right ideology mean in 2018, Cyprus and EU
+
+ideology_eu <- ideology_eu %>% #Sorting for ggplot
+  arrange(ideology) %>%
+  mutate(group = factor(group, levels = .$group))
+
+cyp <- subset(ideology_eu, group == "Cyprus (GCC & TCC)")
+
+plot_ideology_eu <- ggplot(ideology_eu, aes(x=group, y=ideology, label=ideology)) + 
+  geom_point(stat='identity', fill="black", size=6)  +
+  geom_point(data=cyp, colour="#9702A7", size=6) +
+  geom_segment(aes(y = 5, 
+                   x = group, 
+                   yend = ideology, 
+                   xend = group), 
+               color = "black") +
+  geom_text(color="white", size=3) +
+  labs(title="Ideological Self-Identification in EU (2018)", 
+       subtitle = "Eurobarometer 90.3",
+       caption="www.c-pot.org",
+       y = "Left-Right Placement (1 = left, 10 = right)", x = "") + 
+  scale_y_continuous(breaks=seq(2,8,1), limits=c(2,8)) +
+  coord_flip() +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0))
+
+
+
+#Analysis 2: Bar chart for left-right ideology by gender in Cyprus and EU-28
+
+ideology_gen <- ideology_gen %>% #Sorting to display correct standard errors in plotly bar chart
+  arrange(gender)
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5, traceorder="reversed")
+
+#Annotation (individual title) attributes
+anot_ideo <- list(
+  text = "Ideological Self-Identification (2018)",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .98,
+  showarrow = FALSE
+)
+
+anot_logo <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 17, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.25,
+  y = 0.27,
+  showarrow = FALSE
+)
+
+
+
+plot_ideology_gen <- plot_ly(ideology_gen, size = I(35)) %>%
+  add_bars(
+    y = ~group, yend = ~group,
+    x = ~ideology, xend = 0,
+    color = ~gender,
+    error_x = list(
+      type = "ideology_gen", 
+      array = ~se,
+      thickness = 2,
+      width = 4,
+      color = "black"))  %>%
+  layout(yaxis = list(title = ""),
+         xaxis = list(title = "Left-Right Placement (1 = left, 10 = right)", dtick = 1, tickfont = list(size = 15), range = c(1,7)),
+         legend = l,
+         annotations = list(anot_ideo, anot_logo))
+
+
+#Analysis 3: Plot for left-right ideology categories over time in Cyprus
+
+ideo_cat_gcc <- ideo_cat %>% filter(group == "Greek-Cypriots")
+ideo_cat_tcc <- ideo_cat %>% filter(group == "Turkish-Cypriots")
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5, traceorder="reversed")
+
+#Annotation (individual title) attributes
+anot_ideo_cat_gcc <- list(
+  text = "Greek-Cypriots",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.52,
+  y = .91,
+  showarrow = FALSE
+)
+
+anot_ideo_cat_tcc <- list(
+  text = "Turkish-Cypriots",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.52,
+  y = .91,
+  showarrow = FALSE
+)
+
+anot_ideo_cat <- list(
+  text = "Ideological Self-Identification",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .98,
+  showarrow = FALSE
+)
+
+
+
+anot_logo <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.22,
+  y = 0.15,
+  showarrow = FALSE
+)
+
+pal <- c("#4477aa","#228833","#ee6677","#bbbbbb")
+
+plot_ideo_cat_gcc <- plot_ly(ideo_cat_gcc, y = ~value, x= ~year, 
+                             color = ~ideology, colors = pal, 
+                             type = "scatter",
+                             mode = "lines+markers", 
+                             line = list(width = 3), 
+                             marker = list(size = 5),
+                             legendgroup = ~ideology, showlegend = T) %>% 
+  layout(yaxis = list(title = "Percent", titlefont=list(size=18), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l, 
+         annotations = list(anot_ideo_cat_gcc))
+
+plot_ideo_cat_tcc <- plot_ly(ideo_cat_tcc, y = ~value, x= ~year, 
+                             color = ~ideology, colors = pal, 
+                             type = "scatter",
+                             mode = "lines+markers", 
+                             line = list(width = 3), 
+                             marker = list(size = 5),
+                             legendgroup = ~ideology, showlegend = F) %>% 
+  layout(yaxis = list(title = "Percent", titlefont=list(size=18), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = list(anot_ideo_cat_tcc))
+
+#Combining plots for Cypriots
+plot_ideo_cat <- plotly::subplot(plot_ideo_cat_gcc, plot_ideo_cat_tcc, 
+                                             nrows = 1, margin = 0.04, shareX = F, shareY = T, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = list(anot_ideo_cat, anot_logo), autosize = F, width = 920, height = 600) 
+
+```
+
+<br>
+
+>How do Cypriots classify their political ideologies and preferences? To what extent do they identify with the notions of the "left" and "right"?  
+• In general, Turkish-Cypriots are more likely to identify with the left or right than Greek-Cypriots. In turn, Greek-Cypriots are more likely to identify with the centre or to not express a preference than Turkish-Cypriots.  
+• The proportion of Cypriots that do not express a preference has gone from being the least common to the most common preference between 2004-2018.  
+• Cypriots on average are more to the right than most of the EU. Greek-Cypriot women tend to be more to the right than men, whereas in the EU overall, men are more to the right than women.
+<br><br>
+__Η Ιδεολογική Ταυτότητα στην Κύπρο__  
+Πώς κατατάσσουν οι Κύπριοι τις πολιτικές ιδεολογίες και προτιμήσεις τους; Σε ποιο βαθμό ταυτίζονται με τις αντιλήψεις της "αριστεράς" και της "δεξιάς";   
+• Σε γενικές γραμμές, οι Τουρκοκύπριοι ταυτίζονται με τις αντιλήψεις της αριστεράς ή της δεξιάς σε πιο ψηλά ποσοστά απ' ό,τι οι Ελληνοκύπριοι.  Οι Ελληνοκύπριοι ταυτίζονται με τις αντιλήψεις του κέντρου ή δεν εκφέρουν προτίμηση σε ψηλότερα επίπεδα απ' ό,τι οι Τουρκοκύπριοι.   
+• Το ποσοστό των Κυπρίων που δεν εκφέρει προτίμηση έχει αυξηθεί από την λιγότερη συχνή τοποθέτηση στην πιο συχνή τοποθέτηση μεταξύ το 2004 και 2018.    
+• Οι Κύπριοι τείνουν προς τα δεξιά σε ψηλότερα επίπεδα από το Κοινοτικό μέσο όρο. Οι Ελληνοκύπριες τοποθετούνται προς τα δεξιά περισσότερο απ' ό,τι οι άνδρες, ενώ στην ΕΕ συνολικά, οι άντρες τοποθετούνται προς τα δεξιά περισσότερο απ' ό,τι οι γυναίκες.  
+<br><br>
+__Kıbrıs'ta İdeolojik Kimlikler__  
+• Kıbrıs Türkleri siyasi ideolojilerini ve tercihlerini nasıl tanımlıyorlar? "Sol" ve "sağ" kavramları ile kendilerini ne ölçüde özdeşleştiriyorlar? Kıbrıs Türkleri genel olarak Kıbrıs Rumlarına kıyasla sol veya sağ görüşlere daha yatkınlardır. Öte yandan Kıbrıs Rumları kendilerini çoğunlukla merkezde konumlandırıyorlar veya siyasi bir tercihte bulunmuyorlar.  
+• Siyasi görüş belirtmeyen Kıbrıslıların oranı 2004-2018 arasında en nadir rastlanan siyasi tercihten en sık rastlanan siyasi tercihe ilerlemiştir.  
+• Kıbrıslılar çoğunlukla Avrupa Birliği’ne nazaran sağa daha yatkınlardır. Kıbrıslı Rum kadınlar erkeklere göre sağ görüşlere sahipken Avrupa Birliği’nde erkekler genellikle kadınlara göre sağ görüşlere daha meyillilerdir.  
+
+<br>
+How do Cypriots classify their political ideologies and preferences? To what extent do they identify with the notions of the "left" and "right"?  
+<br>
+To explore this we use Eurobarometer survey questions from 2004-2018 that ask respondents to place themselves on a 10-point scale where '1' represents the left and '10' represents the right. First we consider the extent to which Cypriots identify with the left and right over time. The Eurobarometer considers responses from '1'-'4' as  'left', '5'-'6' as 'centre', and '7'-'10' as 'right'. Then we'll examine average scores on the 10-point scale to get a sense of how it compares to the rest of the EU.  
+<br>
+The results show that in most years, Turkish-Cypriots are more likely to identify with the left or right than Greek-Cypriots. In turn, Greek-Cypriots are more likely to identify with the centre or to not express a preference (i.e. say they don't know) than Turkish-Cypriots. Among Greek-Cypriots, the proportion that identifies with the left has declined the most during this time period, while the proportion that does not express a preference has increased substantially.  
+<br>
+In fact, the lack of an ideological preference has become increasingly common among all Cypriots, as more recently it has risen among Turkish-Cypriots as well. The proportion of Cypriots that do not express a preference has gone from being the least common to the most common preference over this time period. This may reflect the increasing disillusionment with politics in Cyprus discussed in the first two blog posts, and again particularly for Greek-Cypriots.
+<br><br>
+`r plot_ideo_cat`
+<br><br><br><br><br><br><br><br>
+Note: no data For Turkish-Cypriots in 2012 & 2013.
+<br><br>
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_<br><br><br>
+
+Despite these differences in ideological preferences, the most recent 2018 data show that among people that do identify with an ideological position (as opposed to those that say they don't know), the average score of Greek-Cypriots and Turkish-Cypriots on the 10-point left-right scale is quite similar. Greek-Cypriot women are more to the right than men, whereas in the EU overall, men tend to be more to the right than women.  
+<br>
+Cypriots on average are more to the right than most of the EU. Cypriots' average placement on the 10-point scale is 5.5, whereas the EU-28 score is 5.1. Out of 28 countries, Cypriots rank 6th (along with Slovakia and Romania) on the left-right continuum. 
+<br><br>
+`r plot_ideology_gen`
+<br><br>
+ 
+```{r echo=FALSE}
+
+plot_ideology_eu
+```
+<br><br>
+__Data sources__  
+Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 75.3, 81.4, 84.3, 85.2, 87.3, 90.3  
+
+
+

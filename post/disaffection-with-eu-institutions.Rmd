@@ -15,8 +15,6 @@ image: ''
 library(haven)
 library(survey)
 library(dplyr)
-library(ggplot2)
-library(plotly)
 library(stats)
 library(knitr)
 library(Hmisc)
@@ -181,7 +179,7 @@ ep11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", esti
 ep12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_1_fac")
 ep13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_1_fac")
 ep14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
-ep43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_1_fac") 
+ep43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_1_fac")
 
 
 #EU-15
@@ -236,7 +234,7 @@ ec11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", esti
 ec12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_2_fac")
 ec13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_2_fac")
 ec14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
-ec43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_2_fac") 
+ec43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_2_fac")
 
 
 #EU-15
@@ -577,13 +575,15 @@ anot_trust_eur_inst_cyp <- list(
 #Trust in EU institutions: Cypriots
 trust_eur_cyp <- trust_eur %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cypriots")
 trust_eur_cyp$weight <- NULL
+trust_eur_cyp$group <- droplevels(trust_eur_cyp$group)
+
 
 #Trust in EU
 plot_trust_eu_cyp <- plot_ly(trust_eur_cyp, y = ~trust_eu, x= ~year, color = ~group, type = "scatter",
                              mode = "lines+markers",
                              line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
                              marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
-                             legendgroup = ~group, showlegend = T) %>% 
+                             legendgroup = ~group, showlegend = F) %>% 
   layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
@@ -615,17 +615,17 @@ plot_trust_ec_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ec, x= ~year, color = ~gr
 
 
 #Trust in ECB
-pal <- c("#9702A7", "#00A876", "#FFCF00")
-plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~group, colors= ~pal, type = "scatter",
+pal <- c("#9702A7", "#00A876", "#FFCF00") #using color vector to get around plotly bug with NA
+plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~group, colors= ~pal, 
+                              type = "scatter",
                               mode = "lines+markers",
                               line = list(width = 3), 
                               marker = list(size = 6),
-                              legendgroup = ~group, showlegend = F) %>% 
+                              legendgroup = ~group, showlegend = T) %>% 
   layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
          legend = l,
          annotations = anot_trust_ecb_cyp)  
-
 
 #Combining plots for Cypriots
 subplot_trust_eu_inst_cyp <- plotly::subplot(plot_trust_eu_cyp, plot_trust_ep_cyp, plot_trust_ec_cyp, plot_trust_ecb_cyp, 
@@ -637,6 +637,7 @@ subplot_trust_eu_inst_cyp <- plotly::subplot(plot_trust_eu_cyp, plot_trust_ep_cy
 #Trust in EU institutions: EU-15 & EU-25
 trust_eur_eu <- trust_eur %>% filter(group == "Cypriots" | group == "EU-15" | group == "EU-25")
 trust_eur_eu$weight <- NULL
+trust_eur_eu$group <- droplevels(trust_eur_eu$group)
 
 
 #Trust in EU
@@ -676,7 +677,7 @@ plot_trust_ec_eu <- plot_ly(trust_eur_eu, y = ~trust_ec, x= ~year, color = ~grou
 
 
 #Trust in ECB
-pal2 <- c("#9702A7", "#009999","#FF7800")
+pal2 <- c("#9702A7","#FF7800", "#009999")
 trust_eur_eu <- trust_eur_eu %>% drop_na("trust_ecb")
 plot_trust_ecb_eu <- plot_ly(trust_eur_eu, y = ~trust_ecb, x= ~year, color = ~group, colors = ~pal2, type = "scatter",
                             mode = "lines+markers",

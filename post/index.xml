@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Cyprus Public Opinion Trends</title>
@@ -6,10 +6,21 @@
     <description>Recent content in Posts on Cyprus Public Opinion Trends</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 18 Nov 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 16 Dec 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Ideological Identification in Cyprus</title>
+      <link>/post/ideological-identification/</link>
+      <pubDate>Mon, 16 Dec 2019 00:00:00 +0000</pubDate>
+      
+      <guid>/post/ideological-identification/</guid>
+      <description>How do Cypriots classify their political ideologies and preferences? To what extent do they identify with the notions of the “left” and “right”?
+• In general, Turkish-Cypriots are more likely to identify with the left or right than Greek-Cypriots. In turn, Greek-Cypriots are more likely to identify with the centre or to not express a preference than Turkish-Cypriots.
+• The proportion of Cypriots that do not express a preference has gone from being the least common to the most common preference between 2004-2018.</description>
+    </item>
     
     <item>
       <title>How Disaffected are Cypriots with Political Institutions?: European Union Institutions</title>

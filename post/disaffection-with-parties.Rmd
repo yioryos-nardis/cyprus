@@ -15,8 +15,6 @@ image: ''
 library(haven)
 library(survey)
 library(dplyr)
-library(ggplot2)
-library(plotly)
 library(stats)
 library(knitr)
 library(Hmisc)
@@ -457,10 +455,6 @@ anot_url_4 <- list(
 #Greek-Cypriots; 00A876
 #EU-15; FF7800
 #EU-25; 009999
-#Age 15-24 = circle
-#Age 25-39 = star
-#Age 40-54 = x
-#Age 55+ = square
 
 
 #Trust in Political Parties: Cypriots
@@ -471,14 +465,12 @@ plot_trust_pp_cyp <- plot_ly(trust_pp_cyp, y = ~trust_pp, x= ~year, color = ~gro
                              line = list(color = factor(trust_pp_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
                              marker = list(color = factor(trust_pp_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
                              legendgroup = ~group, showlegend = T) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
          legend = l,
          annotations = anot_trust_pp_cyp) %>% 
   layout(annotations = anot_url_1)
 
-plot_trust_pp_cyp
-  
 
 #Trust in Political Parties: EU-15 & EU-25
 trust_pp_eu <- trust_pp %>% filter(group == "Cypriots" | group == "EU-15" | group == "EU-25")
@@ -488,53 +480,57 @@ plot_trust_pp_eu <- plot_ly(trust_pp_eu, y = ~trust_pp, x= ~year, color = ~group
                             line = list(color = factor(trust_pp_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
                             marker = list(color = factor(trust_pp_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
                             legendgroup = ~group, showlegend = T) %>% 
-  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,80), tickfont = list(size = 16)),
-         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
-         legend = l,
-         annotations = anot_trust_pp_cyp) %>% 
-  layout(annotations = anot_url_4)
-
-
-#Trust in Political Parties: Cypriots, by age
-
-trust_pp_age_gcc <- trust_pp_age %>% filter(group == "Greek-Cypriots")
-plot_pp_age_gcc <- plot_ly(trust_pp_age_gcc, y = ~trust_pp, x= ~year, type = "scatter",
-                       mode = "lines+markers", linetype = ~age, marker = list(color = "00A876", size = 10),
-                       line = list(color = factor(trust_pp_age_gcc$age, labels = c("00A876","00A876","00A876","00A876")), width = 4), 
-                       marker = list(color = "00A876", labels = "00A876", size = 6), symbol = ~age, symbols = c("circle", "star", "x", "square"), 
-                       legendgroup = ~age, showlegend = T) %>% 
   layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
          legend = l,
-         annotations = anot_trust_pp_gcc) %>% 
-  layout(annotations = anot_url_2)
+         annotations = list(anot_trust_pp_cyp, anot_url_4))
 
-trust_pp_age_tcc <- trust_pp_age %>% filter(group == "Turkish-Cypriots")
-plot_pp_age_tcc <- plot_ly(trust_pp_age_tcc, y = ~trust_pp, x= ~year, type = "scatter",
-                           mode = "lines+markers", linetype = ~age, marker = list(color = "FFCF00", size = 10),
-                           line = list(color = factor(trust_pp_age_gcc$age, labels = c("FFCF00","FFCF00","FFCF00","FFCF00")), width = 4), 
-                           marker = list(color = "FFCF00", labels = "FFCF00", size = 6), symbol = ~age, symbols = c("circle", "star", "x", "square"), 
+
+#Trust in Political Parties: Cypriots, by age
+pal <- c("#4477aa","#228833","#ee6677","#bbbbbb")
+
+trust_pp_age_gcc <- trust_pp_age %>% filter(group == "Greek-Cypriots")
+plot_pp_age_gcc <- plot_ly(trust_pp_age_gcc, y = ~trust_pp, x= ~year, 
+                           color = ~age, colors = pal, 
+                           type = "scatter",
+                           mode = "lines+markers", 
+                           line = list(width = 3), 
+                           marker = list(size = 5),
                            legendgroup = ~age, showlegend = T) %>% 
   layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
          xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
          legend = l,
-         annotations = anot_trust_pp_tcc) %>% 
-  layout(annotations = anot_url_2)
+         annotations = list(anot_trust_pp_gcc)) %>% 
+           layout(annotations = anot_url_2)
+
+
+trust_pp_age_tcc <- trust_pp_age %>% filter(group == "Turkish-Cypriots")
+plot_pp_age_tcc <- plot_ly(trust_pp_age_tcc, y = ~trust_pp, x= ~year, 
+                           color = ~age, colors = pal,
+                           type = "scatter",
+                           mode = "lines+markers", 
+                           line = list(width = 3), 
+                           marker = list(size = 5),
+                           legendgroup = ~age, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
+         legend = l,
+         annotations = list(anot_trust_pp_tcc)) %>% 
+           layout(annotations = anot_url_2)
 
 
 
 #Political Party Membership: Cypriots
 plot_pm_cyp <- plot_ly(pm, y = ~pm, x= ~year, color = ~group, type = "scatter",
-                             mode = "lines+markers",
-                             line = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), width = 3), 
-                             marker = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), size = 6),
-                             legendgroup = ~group, showlegend = T) %>% 
+                       mode = "lines+markers",
+                       line = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), width = 3), 
+                       marker = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), size = 6),
+                       legendgroup = ~group, showlegend = T) %>% 
   layout(yaxis = list(title = "% Membership in Political Parties", titlefont=list(size=20), range = c(0,25), tickfont = list(size = 16)),
          xaxis = list(title = "", tickvals = list(2006, 2008, 2011), tickfont = list(size = 16)),
          legend = l,
-         annotations = anot_pm_cyp) %>% 
-  layout(annotations = anot_url_3)
-
+         annotations = list(anot_pm_cyp)) %>% 
+           layout(annotations = anot_url_3)
 ```
 
 <br>
