@@ -1,7 +1,7 @@
 ---
 title: Religiosity in Cyprus
 author: Yioryos Nardis
-date: '2020-02-17'
+date: '2020-03-10'
 slug: religiosity-in-cyprus
 categories: []
 tags:
@@ -501,7 +501,7 @@ Dindarlık konusundaki küresel eğilimlerin ışığında, Kıbrıslıların ha
 <br>
 This post explores the importance of religion in Cypriots’ lives in light of global trends in religiosity. The decline of traditional religious practices and beliefs across developed societies has eroded the role of religious institutions in people’s lives. At the same time, traditional religious beliefs and values remain strong in developing societies, meaning that there are more people with such beliefs in the world (Norris & Inglehart, 2004).  
 <br>
-How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Survey data from 2006, 2008 and 2011.  
+How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Study data from 2006, 2008 and 2011.  
 <br>
 Religious belonging is pervasive in Cypriot society, irrespective of whether people practice or attend religious services. Nearly all Cypriots consider themselves to be part of a religion or religious denomination. Across the three surveys, 93-99% of Greek-Cypriots and Turkish-Cypriots state that they belong to a religion.  
 <br><br>
@@ -517,7 +517,7 @@ When asked if they consider themselves to be religious, more than half say that 
 plot_religious
 ```
 
-In addition, a large majority of Cypriots state that God plays an important role in their life. Asked to place themselves on a 10-point scale where ‘1’ means that ‘God is not at all important in my life’ and ‘10’ means that ‘God is very important in my life’, Cypriots score higher than nearly all other European countries in Wave 6 of the World Values Survey (2011 - 2013). Cypriots’ average on the 10-point scale is 8.6. Out of eleven European countries, Cypriots rank 2nd after Romania. Greek-Cypriots and Turkish-Cypriots rate the importance of God in their lives quite similarly. 
+In addition, a large majority of Cypriots state that God plays an important role in their life. Asked to place themselves on a 10-point scale where ‘1’ means that ‘God is not at all important in my life’ and ‘10’ means that ‘God is very important in my life’, Cypriots score higher than nearly all other European countries in Wave 6 of the World Values Survey (2011 - 2013). Cypriots’ average on the 10-point scale is 8.6. Out of eleven European countries, Cypriots rank 2nd after Romania. Greek-Cypriots and Turkish-Cypriots rate the importance of God in their lives very similarly. 
 <br><br>
 
 ```{r echo=FALSE}
@@ -525,8 +525,8 @@ In addition, a large majority of Cypriots state that God plays an important role
 plot_importance_god_sub
 ```
 
-These analysis indicates that religion is entrenched in Cypriots’ identity, regardles of how often one may practice or if one considers themselves to be religious. Even those that are not religious clearly feel that they belong to a religious community. We see the prevalence of religion reflected in school curricula, which often include religious teachings, and the influence of religion and religious leaders in government affairs.  
-<br>
+This analysis indicates that religion is entrenched in Cypriots’ identity, regardles of how often one may practice or if one considers themselves to be religious. Even those that are not religious clearly feel that they belong to a religious community. We see the prevalence of religion reflected in school curricula, the influence of religious leaders in government affairs, and the frequent media platforms given to religious leaders to discuss political and [social affairs.](https://www.alphanews.live/cyprus/mitropolitis-pafoy-den-metadidetai-o-koronoios-me-ti-theia-koinonia-binteo){target="_blank"}
+<br><br>
 Why are religious values so prevalent in Cyprus? Research shows that exposure to existential threats, i.e. physical, societal, and personal threats, drives religiosity (Norris & Inglehart, 2004). It persists most strongly among the more vulnerable that typically face survival-threatening risks, particularly those that live in low-income societies and failed states. In this regard Cypriots, and the physical and psychological threats they face due to the continuing conflict on the island, fit this explanation.  
 <br>
  __Data sources__  
@@ -534,4 +534,6 @@ World Values Survey: WVS 5, WVS 6 <br>
 European Values Study: EVS 4
 <br><br>
 __References__  
+_Alpha News._ (2019). Metropolitan Bishop of Paphos: Corona Virus Cannot be Transmitted Through Holy Communion. [Available here.](https://www.alphanews.live/cyprus/mitropolitis-pafoy-den-metadidetai-o-koronoios-me-ti-theia-koinonia-binteo){target="_blank"}
+<br>
 Norris, P., & Inglehart, R. (2004). _Sacred and Secular: Religion and Politics Worldwide_. Cambridge University Press.
