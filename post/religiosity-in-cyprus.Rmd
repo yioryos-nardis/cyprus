@@ -1,0 +1,537 @@
+---
+title: Religiosity in Cyprus
+author: Yioryos Nardis
+date: '2020-02-17'
+slug: religiosity-in-cyprus
+categories: []
+tags:
+  - religion
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access World/European Values Survey data files from website 
+load("WVS2006.rdata")
+load("EVS2008.rdata")
+load("WVS2011.rdata")
+
+
+#####Recoding variables#####  
+
+#Belong to religion: Do you belong to a religion or religious denomination? If yes, which one?. Recode to yes/no/dk
+WVS2006$V185_rec <- car::recode(WVS2006$V185, as.factor = T, "'0' = 'No'; '-5' = NA; '-2' = NA; '-1' = NA; else = 'Yes'")
+EVS2008$v105_rec <- car::recode(EVS2008$v105, as.factor = T, "'1' = 'Yes'; '2' = 'No'")
+WVS2011$V144_rec <- car::recode(WVS2011$V144, as.factor = T, "'0' = 'No'; '-5' = NA; '-4' = NA; '-2' = NA; '-1' = NA; else = 'Yes'")
+
+
+#Religious identification: Independently of whether you attend religious services or not, would you say you are
+WVS2006$V187_rec <- as.numeric(WVS2006$V187)
+WVS2006$V187_rec <- dplyr::recode_factor(WVS2006$V187_rec, '1' = 'A religious person', '2' = 'Not a religious person', '3' = 'A convinced atheist')
+
+EVS2008$v114_rec <- car::recode(EVS2008$v114, as.factor = T, "'1' = 'A religious person'; '2' = 'Not a religious person'; '3' = 'A convinced atheist'")
+
+WVS2011$V147_rec <- as.numeric(WVS2011$V147)
+WVS2011$V147_rec <- dplyr::recode_factor(WVS2011$V147_rec, '1' = 'A religious person', '2' = 'Not a religious person', '3' = 'A convinced atheist')
+
+
+#Importance of god: How important is God in your life? (1-10)
+WVS2006$V192_rec <- as.numeric(WVS2006$V192)
+WVS2006$V192_rec[WVS2006$V192_rec < 1] <- NA
+
+EVS2008$v129_rec <- as.numeric(EVS2008$v129)
+EVS2008$v129_rec[EVS2008$v129_rec < 1] <- NA
+
+WVS2011$V152_rec <- as.numeric(WVS2011$V152)
+WVS2011$V152_rec[WVS2011$V152_rec < 1] <- NA
+
+
+#Subsetting Cypriot respondents  
+WVS2006$CYP <- NA
+WVS2006[12651:13150, 'CYP'] <- 'Turkish-Cypriots' #Cases 1-500 are Turkish-Cypriot respondents (12651 - 13150)
+WVS2006[13151:13700, 'CYP'] <- 'Greek-Cypriots' #cases 501-1050 are Greek-Cypriot respondents (13151 - 13700)
+WVS2006$CYP <- as.factor(WVS2006$CYP)
+WVS2006_cyp <- filter(WVS2006, V2 == 196)
+
+EVS2008$c_abrv <- dplyr::recode(EVS2008$c_abrv, "CY" = "Greek-Cypriots", "CY-TCC" = "Turkish-Cypriots")
+EVS2008$c_abrv <- as.factor(EVS2008$c_abrv)
+EVS2008_cyp <- filter(EVS2008, c_abrv == 'Greek-Cypriots' | c_abrv == 'Turkish-Cypriots')
+EVS2008_cyp <- rename(EVS2008_cyp, CYP = c_abrv)
+EVS2008_cyp$CYP <- droplevels(EVS2008_cyp$CYP)
+
+WVS2011$CYP <- NA
+WVS2011[10343:10842, 'CYP'] <- 'Greek-Cypriots' #Cases 1-500 are Turkish-Cypriot respondents (11543 - 12402)
+WVS2011[10843:11342, 'CYP'] <- 'Turkish-Cypriots' #cases 501-1000 are Greek-Cypriot respondents (12043 - 12542)
+WVS2011$CYP <- as.factor(WVS2011$CYP)
+WVS2011_cyp <- filter(WVS2011, V2 == '196')
+
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:2) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Function calling 'Func'. Calcuates mean estimates of given measure by group and subgroup (GCC/TCC) across time
+applyFunc2  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#Function to convert to percentages
+mult_one <- function(var1)
+{
+  round((var1*100), 1) 
+}
+
+
+######Calculating religiosity in Cyprus######
+
+#Lists with data, weights, groups and variables to pass into survey estimate function
+#WVS2006, 1 country code, weights only for two communities.
+#EVS2008, 2 country codes, separate weights within each community. 
+#WVS2011, 1 country code, weights for two communities and demographics.
+
+###Belong to religion (percentage for each category)
+r1 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V185_rec") #Cypriots 2006
+r2 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V144_rec") #Cypriots 2011
+r3 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V185_rec") #GCC & TCC 2006
+r4 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v105_rec") #GCC & TCC 2008
+r5 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V144_rec") #GCC & TCC 2011
+
+#Cypriots
+dataInfo <- list(r1, r2)
+belong <- applyFunc("196", dataInfo) 
+belong[, ncol(belong)+1] <- NA
+colnames(belong) <- c("y_2006", "y_2011", "y_2008")
+belong$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r3, r4, r5)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+results <- drop_na(results)
+colnames(results) <- c("y_2006", "y_2008", "y_2011")
+results$Group <- c("Greek-Cypriots")
+belong <- rbind(belong, results)
+
+#Turkish-Cypriots
+results <- applyFunc("Turkish-Cypriots", dataInfo) 
+results <- drop_na(results)
+colnames(results) <- c("y_2006", "y_2008", "y_2011")
+results$Group <- c("Turkish-Cypriots")
+belong <- rbind(belong, results)
+belong$Belong <- c("No", "Yes")
+
+
+#Calculating combined Cypriot percentages for 2008 using population information from EVS technical report 
+#Rough estimate given that values are almost identical
+belong <- transform(belong, y_2008 = case_when(
+  Group=='Cypriots' & Belong == 'No' ~ 0.004135629*(605024 / 799774) + 0.035514883*(194750 / 799774),
+  TRUE ~ y_2008))
+
+belong <- transform(belong, y_2008 = case_when(
+  Group=='Cypriots' & Belong == 'Yes' ~ 0.995864371*(605024 / 799774) + 0.964485117*(194750 / 799774),
+  TRUE ~ y_2008))
+
+
+#Reshape from wide to long
+belong <- belong %>% gather(Year, Rate, y_2006, y_2008, y_2011)
+belong$Year <- gsub("y_", "", belong$Year)
+belong$Year <- as.numeric(belong$Year)
+belong$Group <- as.factor(belong$Group)
+belong$Rate <- mult_one(belong$Rate)
+belong <- belong[order(belong$Year), ] 
+
+
+
+###Are you religious (3 categories)
+r6 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V187_rec") #Cypriots 2006
+r7 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V147_rec") #Cypriots 2011
+r8 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V187_rec") #GCC & TCC 2006
+#r9 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v114_rec") #GCC 2008, different response options for TCC
+r10 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V147_rec") #GCC & TCC 2011
+
+
+#Cypriots
+dataInfo <- list(r6, r7)
+religious <- applyFunc("196", dataInfo) 
+colnames(religious) <- c("y_2006", "y_2011")
+religious$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r8, r10)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+colnames(results) <- c("y_2006", "y_2011")
+results$Group <- c("Greek-Cypriots")
+religious <- rbind(religious, results)
+
+#Turkish-Cypriots
+results <- applyFunc("Turkish-Cypriots", dataInfo) 
+colnames(results) <- c("y_2006", "y_2011")
+results$Group <- c("Turkish-Cypriots")
+religious <- rbind(religious, results)
+religious$Relig <- c("Religious", "Not religious", "Atheist")
+religious$Relig <- as.factor(religious$Relig)
+religious$Group <- as.factor(religious$Group)
+religious$relig <- NULL
+
+
+#Reshape from wide to long
+religious <- religious %>% gather(Year, Rate, y_2006, y_2011)
+religious$Year <- gsub("y_", "", religious$Year)
+religious$Year <- as.factor(religious$Year)
+religious$relig <- as.factor(religious$Relig)
+religious$Rate <- mult_one(religious$Rate)
+
+
+
+###Importance of god (mean)
+r11 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V192_rec") #Cypriots 2006
+r12 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V152_rec") #Cypriots 2011
+r13 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V192_rec") #GCC & TCC 2006
+r14 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v129_rec") #GCC 2008
+r15 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V152_rec") #GCC & TCC 2011
+
+
+#Cypriots
+dataInfo <- list(r11, r12)
+importance_god <- applyFunc2("mean", "196", dataInfo) 
+importance_god[nrow(importance_god)+1, ] <- NA
+importance_god$Year <- c(2006, 2011, 2008)
+importance_god$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r13, r14, r15)
+results <- applyFunc2("mean", "Greek-Cypriots", dataInfo) 
+results$Year <- c(2006, 2008, 2011)
+results$Group <- c("Greek-Cypriots")
+importance_god <- rbind(importance_god, results)
+
+#Turkish-Cypriots
+results <- applyFunc2("mean", "Turkish-Cypriots", dataInfo) 
+results$Year <- c(2006, 2008, 2011)
+results$Group <- c("Turkish-Cypriots")
+importance_god <- rbind(importance_god, results)
+importance_god$Group <- as.factor(importance_god$Group)
+
+
+#Calculating combined Cypriot percentages for 2008 using population information from EVS technical report 
+#Rough estimate given that values are almost identical
+importance_god <- transform(importance_god, mean = case_when(
+  Group=='Cypriots' & Year == '2008' ~ 8.500932*(605024 / 799774) + 8.648479*(194750 / 799774),
+  TRUE ~ mean))
+
+
+#Calculating importance of God for other European countries in WVS6
+r17 <- list(passedData = WVS2011, passedWeights="V258", group="V2", estimate="V152_rec")
+
+
+#Calculating mean for European countries in WVS6
+dataInfo <- list(r17)
+god <- applyFunc2("mean", "112", dataInfo) #Belarus
+
+results <- applyFunc2("mean", "276", dataInfo) #Germany
+god <- rbind(god, results)
+results <- applyFunc2("mean", "233", dataInfo) #Estonia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "528", dataInfo) #Netherlands
+god <- rbind(god, results)
+results <- applyFunc2("mean", "616", dataInfo) #Poland
+god <- rbind(god, results)
+results <- applyFunc2("mean", "642", dataInfo) #Romania
+god <- rbind(god, results)
+results <- applyFunc2("mean", "643", dataInfo) #Russia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "705", dataInfo) #Slovenia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "724", dataInfo) #Spain
+god <- rbind(god, results)
+results <- applyFunc2("mean", "752", dataInfo) #Sweden
+god <- rbind(god, results)
+
+god$Group <- as.factor(c("Belarus", "Germany", "Estonia", "Netherlands", "Poland", "Romania", "Russia", "Slovenia", "Spain", "Sweden"))
+god$Year <- as.numeric(c("2011", "2013", "2011", "2012", "2012", "2012", "2011", "2011", "2011", "2011"))
+importance_god <- rbind(importance_god, god)
+
+
+save(belong, file=("belong_religion.rdata"))
+save(importance_god, file=("importance_god.rdata"))
+save(religious, file=("religious.rdata"))
+```
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/belong_religion.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/religious.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/importance_god.rdata")
+
+
+#####Plots
+
+#Analysis 1: Belong to relgion
+
+#Legend attributes
+l <- list(font = list(family = "avenir", size = 18, color = "#000"), x = 100, y = 0.5)
+
+#Annotation attributes
+anot_belong <- list(
+  text = "% of Cypriots that Belong to Religion",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "left",
+  x = .3,
+  y = 1,
+  showarrow = FALSE
+)
+
+anot_source <- list(
+  text = "Data: World Values Survey 5 & 6; European Values Study 4",
+  font = list(family = "avenir", size = 14, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = -.02,
+  y = -0.13,
+  showarrow = FALSE
+)
+
+anot_url <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 17, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.4,
+  y = 0.95,
+  showarrow = FALSE
+)
+
+anot_logo <- list(
+  text = "Cyprus Public Opinion Trends",
+  font = list(family = "avenir", size = 17, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.4,
+  y = 1,
+  showarrow = FALSE
+)
+
+
+belong_yes <- subset(belong, Belong == "Yes" & Group !="Cypriots")
+belong_yes$Group <- factor(belong_yes$Group)
+belong_yes$Belong <- NULL
+belong_yes$Year <- as.factor(belong_yes$Year)
+
+#Colours
+#Cypriots;9702A7
+#Turkish-Cypriots; FFCF00
+#Greek-Cypriots; 00A876
+
+pal <- c("#00A876","#FFCF00")
+
+plot_belong <- plot_ly(belong_yes, y = ~Rate, x= ~Year, 
+                       color = ~Group, colors = pal,
+                       type = "scatter", 
+                       mode = "lines+markers",
+                       line = list(width = 3), 
+                       marker = list(size = 6),
+                       showlegend = T) %>% 
+  layout(yaxis = list(title = "", titlefont=list(size=16), range = c(0,110), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 1, tickfont = list(size = 13), showgrid = F),
+         legend = l,
+         annotations = anot_belong) %>% 
+  layout(annotations = anot_url) %>% 
+  layout(annotations = anot_source) %>% 
+  layout(annotations = anot_logo)
+
+
+
+#Analysis 2: Religious identification
+
+religious_sub <- subset(religious, Group !="Cypriots")
+religious_sub$Group <- factor(religious_sub$Group)
+
+year_one <- filter(religious_sub, Year == 2006) %>% 
+  group_by(Group) %>% arrange(desc(Relig)) %>% 
+  mutate(pos = cumsum(Rate) - Rate / 2)   
+
+year_two <- filter(religious_sub, Year == 2011) %>% 
+  group_by(Group) %>% arrange(desc(Relig)) %>% 
+  mutate(pos = cumsum(Rate) - Rate / 2)   
+
+plot_religious <- ggplot() +
+  geom_bar(data=religious_sub, 
+           aes(y = Rate, x = Group, fill = Relig), 
+           stat="identity",
+           position='stack', 
+           width = .6) +
+  facet_grid( ~ Year) +
+  geom_text(data = year_one, 
+            aes(y = pos, x = Group, label = Rate)) +
+  geom_text(data = year_two, 
+            aes(y = pos, x = Group, label = Rate)) +
+  labs(title="Religious Identification in Cyprus", 
+       caption = "Data: World Values Survey 5 & 6",
+       y = "", x = "") +
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.58, .975)) +
+  theme(plot.tag = element_text(size = 11, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0)) +
+  theme(legend.title = element_blank()) +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey"), 
+        panel.grid.minor.y = element_line(size=.1, color="grey"),
+        axis.title.y = element_text(color="black", size=15)) +
+  aes(stringr::str_wrap(Group, 2), Rate) + xlab(NULL) + ylab("Percent")
+
+
+
+#Analysis 3: Importance of god
+
+importance_god_sub <- filter(importance_god, Group !="Greek-Cypriots", Group !="Turkish-Cypriots", Year != "2006", Year !="2008")
+importance_god_sub$Group <- car::recode(importance_god_sub$Group, as.factor = T, "'Cypriots' = 'Cyprus (GCC & TCC)'")
+importance_god_sub$Group <- factor(importance_god_sub$Group)
+importance_god_sub$mean <- round(importance_god_sub$mean, 1)
+importance_god_sub$Year <- NULL
+
+importance_god_sub <- importance_god_sub %>% #Sorting for ggplot
+  arrange(mean) %>%
+  mutate(Group = factor(Group, levels = .$Group), col = ifelse(Group == 'Cyprus (GCC & TCC)', '#9702A7', 'grey40'))
+
+cyp <- subset(importance_god_sub , Group == "Cyprus (GCC & TCC)")
+
+plot_importance_god_sub <- ggplot(importance_god_sub, aes(x=Group, y=mean, label=mean)) + 
+  geom_point(stat='identity', fill="black", size=7)  +
+  geom_point(data=cyp, colour="#9702A7", size=7) +
+  geom_segment(aes(y = 5, 
+                   x = Group, 
+                   yend = mean, 
+                   xend = Group), 
+               color = importance_god_sub$col) +
+  geom_text(color="white", size=3.3) +
+  labs(title="Importance of God in One's Life", 
+       caption="Data: World Values Survey 6 (2011-2013)",
+       y = "\n1 = not at all important,  10 = very important", x = "") + 
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.58, .975)) +
+  theme(plot.tag = element_text(size = 11, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = -.4)) +
+  scale_y_continuous(breaks=seq(1,9,1), limits=c(1,9)) +
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey90"),
+        plot.title = element_text(size = 14, margin=margin(0,0,20,0))) 
+```
+
+<br>
+
+>How important is religion in Cypriots’ lives in light of global trends in religiosity?  
+• Religious values are prevalent in Cyprus and entrenched in people’s identity, regardless of whether one practices or considers themselves to be religious.  
+• Nearly all Cypriots consider themselves to be part of a religion or religious denomination, irrespective of whether they attend religious services.  
+• Overall, Greek-Cypriots tend to be slightly more religious than Turkish-Cypriots.  
+• A large majority of Cypriots state that God plays an important role in their life.
+<br><br>
+__Η Θρησκευτικότητα στην Κύπρο__  
+Πόσο σημαντικός είναι ο ρόλος της θρησκείας στις ζωές των Κυπρίων, δεδομένων των παγκόσμιων τάσεων γύρω από την θρησκευτικότητα;   
+• Οι θρησκευτικές αξίες είναι διαδεδομένες και κατοχυρωμένες στην κοινωνική ταυτότητα των Κυπρίων, ανεξάρτητα από το αν κάποιος θεωρεί τον εαυτό του ως θρησκευόμενο.  
+• Σχεδόν όλοι οι Κύπριοι δηλώνουν πως ανήκουν σε μία θρησκεία ή θρησκευτικό δόγμα, ασχέτος από το αν ασκούν θρησκευτικά καθήκοντα ή συμμετέχουν σε θρησκευτικές λιτουργίες.  
+• Γενικά, οι Ελληνοκύπριοι τείνουν να είναι λίγο πιο θρήσκοι από τους Τουρκοκύπριους.  
+• Η μεγάλη πλειοψηφία των Κυπρίων δηλώνει ότι ο θεός διαδραματίζει σημαντικό ρόλο στη ζωή τους.
+<br><br>
+__Kıbrıs’ta Dindarlık Eğilimi__  
+Dindarlık konusundaki küresel eğilimlerin ışığında, Kıbrıslıların hayatında din ne kadar önem teşkil ediyor?  
+• Kıbrıs’ta dini değerler yaygın olarak görülüyor ve bu değerler, kişilerin dinin gerekliliklerini yerine getirip getirmediklerinden veya kendilerini dindar olarak görüp görmediklerinden bağımsız olarak kimliklerinin bir parçası haline gelmiş bulunuyor.  
+• Genel olarak, Kıbrıslı Rumlar Kıbrıslı Türklere kıyasla biraz daha fazla dindarlık eğilimi gösteriyor.  
+• Kıbrıslıların büyük bir bölümü, Tanrı’nın hayatlarında önemli bir rol oynadığını belirtiyor.
+
+<br>
+This post explores the importance of religion in Cypriots’ lives in light of global trends in religiosity. The decline of traditional religious practices and beliefs across developed societies has eroded the role of religious institutions in people’s lives. At the same time, traditional religious beliefs and values remain strong in developing societies, meaning that there are more people with such beliefs in the world (Norris & Inglehart, 2004).  
+<br>
+How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Survey data from 2006, 2008 and 2011.  
+<br>
+Religious belonging is pervasive in Cypriot society, irrespective of whether people practice or attend religious services. Nearly all Cypriots consider themselves to be part of a religion or religious denomination. Across the three surveys, 93-99% of Greek-Cypriots and Turkish-Cypriots state that they belong to a religion.  
+<br><br>
+`r plot_belong`
+<br>
+_Interactive visualization: hover over to display values, double-click to zoom, click legend to hide/show specific lines_<br><br>
+
+When asked if they consider themselves to be religious, more than half say that they are religious, as opposed to not religious or atheist. While 2006 data suggest relatively similar levels of religious identification among Greek-Cypriots and Turkish-Cypriots, 2011 data suggest that Greek-Cypriots consider themselves to be significantly more religious than Turkish-Cypriots. Very few people identify as atheist. In both years aethism tends to be higher among Turkish-Cypriots, as around 1% of Greek-Cypriots and 3-5% of Turkish Cypriots identify as atheist. 
+<br><br>
+
+```{r echo=FALSE}
+
+plot_religious
+```
+
+In addition, a large majority of Cypriots state that God plays an important role in their life. Asked to place themselves on a 10-point scale where ‘1’ means that ‘God is not at all important in my life’ and ‘10’ means that ‘God is very important in my life’, Cypriots score higher than nearly all other European countries in Wave 6 of the World Values Survey (2011 - 2013). Cypriots’ average on the 10-point scale is 8.6. Out of eleven European countries, Cypriots rank 2nd after Romania. Greek-Cypriots and Turkish-Cypriots rate the importance of God in their lives quite similarly. 
+<br><br>
+
+```{r echo=FALSE}
+
+plot_importance_god_sub
+```
+
+These analysis indicates that religion is entrenched in Cypriots’ identity, regardles of how often one may practice or if one considers themselves to be religious. Even those that are not religious clearly feel that they belong to a religious community. We see the prevalence of religion reflected in school curricula, which often include religious teachings, and the influence of religion and religious leaders in government affairs.  
+<br>
+Why are religious values so prevalent in Cyprus? Research shows that exposure to existential threats, i.e. physical, societal, and personal threats, drives religiosity (Norris & Inglehart, 2004). It persists most strongly among the more vulnerable that typically face survival-threatening risks, particularly those that live in low-income societies and failed states. In this regard Cypriots, and the physical and psychological threats they face due to the continuing conflict on the island, fit this explanation.  
+<br>
+ __Data sources__  
+World Values Survey: WVS 5, WVS 6<br>
+European Values Study: EVS 4
+<br><br>
+__References__  
+Norris, P., & Inglehart, R. (2004). _Sacred and Secular: Religion and Politics Worldwide_. Cambridge University Press.
