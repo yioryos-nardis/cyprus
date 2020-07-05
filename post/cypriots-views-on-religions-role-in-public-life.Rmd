@@ -1,0 +1,480 @@
+---
+title: Cypriots’ Views on the Role of Religion in Public Life
+author: Yioryos Nardis
+date: '2020-07-05'
+slug: cypriots-views-on-religions-role-in-public-life
+categories: []
+tags:
+  - religion
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access World/European Values Survey data files from website 
+load("WVS2006.rdata")
+load("EVS2008.rdata")
+load("WVS2011.rdata")
+
+
+#####Recoding variables#####  
+
+#People who belong to different religions are probably just as moral as those who belong to mine
+describe(WVS2011$V156) #recode to missing
+WVS2011$V156_rec <- car::recode(WVS2011$V156, as.factor = T, "'-5' = NA; '-3' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Disagree'; '4' = 'Strongly disagree'")
+WVS2011$V156_rec <- factor(WVS2011$V156_rec, levels = c(levels(WVS2011$V156_rec), "Neither agree or disagree"))
+levels(WVS2011$V156_rec)
+describe(WVS2011$V156_rec)
+
+#The only acceptable religion is my religion.
+describe(WVS2011$V154) #recode to missing
+WVS2011$V154_rec <- car::recode(WVS2011$V154, as.factor = T, "'-5' = NA; '-4' = NA; '-3' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Disagree'; '4' = 'Strongly disagree'")
+WVS2011$V154_rec <- factor(WVS2011$V154_rec, levels = c(levels(WVS2011$V154_rec), "Neither agree or disagree"))
+levels(WVS2011$V154_rec)
+describe(WVS2011$V154_rec)
+
+
+#Religious leaders should not influence government decisions
+describe(WVS2006$V197) #recode to missing
+WVS2006$V197_rec <- car::recode(WVS2006$V197, as.factor = T, "'-5' = NA; '-4' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Neither agree or disagree'; '4' = 'Disagree'; '5' = 'Strongly disagree'")
+describe(WVS2006$V197_rec)
+
+describe(EVS2008$v135) #no recoding for missing
+EVS2008$v135_rec <- car::recode(EVS2008$v135, as.factor = T, "'1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Neither agree or disagree'; '4' = 'Disagree'; '5' = 'Strongly disagree'")
+EVS2008$v135_rec <- factor(EVS2008$v135_rec, levels = c(levels(EVS2008$v135_rec), "DK", "NR"))
+levels(EVS2008$v135_rec)
+describe(EVS2008$v135_rec)
+
+
+#Reordering factors
+WVS2011$V156_rec <- factor(WVS2011$V156_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+WVS2011$V154_rec <- factor(WVS2011$V154_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+WVS2006$V197_rec <- factor(WVS2006$V197_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+EVS2008$v135_rec <- factor(EVS2008$v135_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:7) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Lists for function
+r1 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V155_rec") #Cypriots 2011 - All religions should be taught in our public schools
+r2 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V156_rec") #Cypriots 2011 - People who belong to different religions are probably just as moral as those who belong to mine
+r3 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V154_rec") #Cypriots 2011 - The only acceptable religion is my religion
+r4 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V194_rec") #Cypriots 2006 - Politicians who do not believe in God are unfit for public office
+r5 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V197_rec") #Cypriots 2006 - Religious leaders should not influence government decisions
+
+r6 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V155_rec") #GCC & TCC 2011 - All religions should be taught in our public schools
+r7 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V156_rec") #GCC & TCC 2011 - People who belong to different religions are probably just as moral as those who belong to mine
+r8 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V154_rec") #GCC & TCC 2011 - The only acceptable religion is my religion
+r9 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V194_rec") #GCC & TCC 2006 - Politicians who do not believe in God are unfit for public office
+r10 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V197_rec") #GCC & TCC 2006 - Religious leaders should not influence government decisions
+r11 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v134_rec") #GCC & TCC 2008 - Politicians who do not believe in God are unfit for public office
+r12 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v135_rec") #GCC & TCC 2008 - Religious leaders should not influence government decisions
+
+
+
+#####Calculating estimates#####
+
+#Calculating estimates for Cyprus overall
+dataInfo <- list(r1, r2, r3, r4, r5)
+religion_public <- applyFunc("196", dataInfo) 
+religion_public$group <- c("Cypriots")
+religion_public$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+colnames(religion_public) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "group", "agree")
+
+
+#Calculating estimates for two Cypriot communities
+dataInfo <- list(r6, r7, r8, r9, r10, r11, r12)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+colnames(results) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "public_office_2008", "government_2008")
+results$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+results$group <- c("Greek-Cypriots")
+
+results2 <- applyFunc("Turkish-Cypriots", dataInfo) 
+colnames(results2) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "public_office_2008", "government_2008")
+results2$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+results2$group <- c("Turkish-Cypriots")
+results <- rbind(results2, results)
+
+religion_public <- bind_rows(religion_public, results)
+
+
+#Calculating overall Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+religion_public$weight <- c(rep(NA, 7), rep(194750 / 799774, 7), rep(605024 / 799774, 7))
+
+religion_public <- religion_public %>% mutate(public_office_2008_w = public_office_2008 * weight)
+religion_public <- religion_public %>% mutate(government_2008_w = government_2008 * weight)
+
+religion_public_cyp <- religion_public  %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+religion_public_cyp <- religion_public_cyp %>% select(-"public_schools_2011", -"moral_2011", -"acceptable_2011", -"public_office_2006", -"government_2006", -"weight")
+
+religion_public_cyp <- religion_public_cyp %>% 
+  group_by(agree) %>% 
+  summarise(public_office_2008 = sum(public_office_2008_w),
+            government_2008 = sum(government_2008_w))
+
+religion_public_cyp$group <- c("Cypriots")
+religion_public <- religion_public %>% select(-"public_office_2008_w", -"government_2008_w", -"weight")
+
+religion_public <- left_join(religion_public, religion_public_cyp, by=c("group","agree"))
+religion_public <- within(religion_public , government_2008.x <- ifelse(is.na(government_2008.x), government_2008.y, government_2008.x))
+religion_public <- within(religion_public , public_office_2008.x <- ifelse(is.na(public_office_2008.x), public_office_2008.y, public_office_2008.x))
+
+religion_public <- religion_public %>% select(-"public_office_2008.y", -"government_2008.y")
+religion_public$public_office_2008.x
+
+religion_public <- rename(religion_public, public_office_2008 = public_office_2008.x)
+religion_public <- rename(religion_public, government_2008 = government_2008.x)
+
+religion_public <- religion_public %>% mutate_at(vars(-group, -agree), mult_one)
+
+religion_public$group <- as.factor(religion_public$group) 
+religion_public$agree <- as.factor(religion_public$agree) 
+religion_public$agree<- factor(religion_public$agree, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+
+religion_public <- religion_public[c(1:5, 8, 9, 6, 7)]
+save(religion_public, file=("religion_public.rdata"))
+```
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(sjmisc)
+library(tidyr)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/religion_public.rdata")
+
+
+
+#####Plots#####
+
+
+
+##PLOT 1: Religious leaders should not influence [how people vote in elections] + [government decisions]
+elections <- select(religion_public, "group", "elections_2006", "agree")
+elections <- subset(elections, group != "Cypriots" & (agree != "DK" & agree != "NR"))
+elections <- elections[, c(1,3,2)]
+elections$group <- droplevels(elections$group)
+elections$group <- factor(elections$group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+names(elections)[3] <- "value"
+elections$ind <- c("Religious leaders should not\ninfluence how people vote in elections")
+
+
+gov_dec <- select(religion_public, "group", "government_2006", "agree")
+gov_dec <- subset(gov_dec, group != "Cypriots" & (agree != "DK" & agree != "NR"))
+gov_dec <- gov_dec[, c(1,3,2)]
+gov_dec$group <- droplevels(gov_dec $group)
+gov_dec$group <- factor(gov_dec $group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+names(gov_dec )[3] <- "value"
+gov_dec$ind <- c("Religious leaders should not\ninfluence government decisions")
+
+religious_influence <- rbind(elections, gov_dec)
+religious_influence$value <- religious_influence$value/100
+
+##Stacked bar chart
+#calculate the position of the label
+data_one <- filter(religious_influence, ind == "Religious leaders should not\ninfluence how people vote in elections") %>% 
+  group_by(group) %>% arrange(desc(agree)) %>% 
+  mutate(pos = cumsum(value) - value / 2)   
+
+data_two <- filter(religious_influence, ind == "Religious leaders should not\ninfluence government decisions") %>% 
+  group_by(group) %>% arrange(desc(agree)) %>% 
+  mutate(pos = cumsum(value) - value / 2) 
+
+plot_religious_influence <- ggplot() +
+  geom_bar(data=religious_influence, 
+           aes(y = value, x = group, fill = agree), 
+           stat="identity",
+           position='stack', 
+           width = .6) +
+  scale_fill_brewer(palette = "Purples", direction=-1) + 
+  facet_grid( ~ ind) +
+  theme(strip.text = element_text(size=9, lineheight=1)) +
+  geom_text(data = data_one, 
+            aes(y = pos, x = group, label = round(value*100))) +
+  geom_text(data = data_two, 
+            aes(y = pos, x = group, label = round(value*100))) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="'How strongly do you agree or disagree with each of the following statements?'",
+       caption = "Data: World Values Survey 5 (2006)",
+       y = "", x = "") +
+    labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.86, .92)) +
+    theme(plot.tag = element_text(size = 11, color = "grey40")) +
+  theme(plot.caption = element_text(size = 12, margin = margin(t = 12), color = "grey40", hjust = 0)) +
+  theme(legend.title = element_blank()) +
+  theme(panel.background = element_rect(fill = "grey100", colour = "grey70"),
+        axis.text.x = element_text(size = 9, hjust = .5, vjust = .5)) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey"), 
+        panel.grid.minor.y = element_line(size=.1, color="grey")) 
+
+
+
+
+##PLOT 2: Politicians who do not believe in God are unfit for public office
+religion_public_06_08 <- to_long(religion_public, "year", c("public_office", "government"), 
+                                 c("public_office_2006", "public_office_2008"),
+                                 c("government_2006", "government_2008"))
+
+religion_public_06_08 <- religion_public_06_08[c(-1,-2,-3)]
+religion_public_06_08$year <- gsub("public_office_", "", religion_public_06_08$year)
+religion_public_06_08$year <- as.factor(religion_public_06_08$year) 
+public_office <- subset(religion_public_06_08, year == 2008 & group !="Cypriots" & (agree != 'DK' & agree != 'NR'))
+public_office <- public_office[c(-1,-2,-3, -6, -8)]
+public_office$public_office <- round(public_office$public_office)
+
+
+public_office <- spread(public_office, agree, public_office)
+colnames(public_office) <- c("group", "Strongly_agree", "Agree", "Neither_agree_or_disagree", "Disagree", "Strongly_disagree")
+public_office$group <- droplevels(public_office$group)
+public_office$group <- factor(public_office$group, levels = c("Turkish-Cypriots","Greek-Cypriots"))
+
+top_labels <- c("Strongly<br>agree", "Agree", "Neither Agree<br>or Disagree", "Disagree", "Strongly<br>disagree")
+
+plot_public_office <- plot_ly(public_office, x = ~Strongly_agree, y = ~group, type = 'bar', orientation = 'h',
+                        marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                      line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~Agree, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~Neither_agree_or_disagree, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~Disagree, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~Strongly_disagree, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Please tell us if you strongly agree, agree, disagree,\nor strongly disagree with the following statement:\nPoliticians who do not believe in God are unfit for public office'", y=.9),
+         xaxis = list(title = "Data: European Values Study 4 (2008)\n\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 120, r = 10, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree / 2, y = ~group,
+                  text = paste(public_office[,"Strongly_agree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree / 2, y = ~group,
+                  text = paste(public_office[,"Agree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree / 2, y = ~group,
+                  text = paste(public_office[,"Neither_agree_or_disagree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree + Disagree / 2, y = ~group,
+                  text = paste(public_office[,"Disagree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree + Disagree + Strongly_disagree / 2, y = ~group,
+                  text = paste(public_office[,"Strongly_disagree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(30 / 2, 30 + 18 / 2, 30 + 18 + 21 / 2, 30 + 18 + 21 + 21 / 2, 30 + 18 + 21 + 21 + 11 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+
+
+
+##PLOT 3: Whenever science and religion conflict, religion is always right
+
+science <- select(religion_public, "group", "science_2011", "agree")
+science$science_2011 <- round(science$science_2011)
+science <- subset(science, group != "Cypriots" & (agree != "Neither agree or disagree" & agree != "NR"))
+science <- spread(science, agree, science_2011)
+colnames(science) <- c("group", "Strongly_agree", "Agree", "Disagree", "Strongly_disagree", "DK")
+science$group <- droplevels(science$group)
+science$group <- factor(science$group, levels = c("Turkish-Cypriots", "Greek-Cypriots"))
+
+top_labels <- c("Strongly<br>agree", "Agree", "Disagree", "Strongly<br>disagree", "Don\'t<br>know")
+
+plot_science <- plot_ly(science, x = ~Strongly_agree, y = ~group, type = 'bar', orientation = 'h',
+                           marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                         line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~Agree, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~Disagree, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~Strongly_disagree, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~DK, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Please tell us if you strongly agree, agree, disagree,\nor strongly disagree with the following statement:\nWhenever science and religion conflict, religion is always right'", y=.9),
+         xaxis = list(title = "Data: World Values Survey 6 (2011)\n\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 120, r = 10, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree / 2, y = ~group,
+                  text = paste(science[,"Strongly_agree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree / 2, y = ~group,
+                  text = paste(science[,"Agree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree / 2, y = ~group,
+                  text = paste(science[,"Disagree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree + Strongly_disagree / 2, y = ~group,
+                  text = paste(science[,"Strongly_disagree"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree + Strongly_disagree + DK/ 2, y = ~group,
+                  text = paste(science[,"DK"],'%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(13 / 2, 13 + 28 / 2, 13 + 28 + 34 / 2, 13 + 28 + 34 + 12 / 2, 13 + 28 + 34 + 12 + 12 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+```
+
+<br>
+
+>After examining religiosity in Cyprus, we now turn to people’s views on the role of religion in politics and public affairs.  
+• There is widespread belief in the separation of religion and government across both communities. However, non-trivial support for religious reasoning in public affairs also exists.   
+• The vast majority of Cypriots are clear in their conviction that religious leaders should not influence political decision-making and electoral processes.  
+• At the same time a sizable segment of the population feels that belief in God is a necessary trait for politicians to have and that religion should take precedence over science.  
+• In general, Turkish-Cypriots tend to express slightly more secular views than Greek-Cypriots.  
+<br>
+__Οι Απόψεις των Κυπρίων Σχετικά με τον Ρόλο της Θρησκείας στη Δημόσια Ζωή__  
+Αφού εξετάσαμε την θρησκευτικότητα στην Κύπρο, στρεφόμαστε τώρα στις απόψεις σχετικά με το ρόλο της θρησκείας στην πολιτική και την δημόσια διοίκηση.  
+• Ο διαχωρισμός κράτους και θρησκείας τυχαίνει ευρείας υποστήριξης και στις δύο κοινότητες. Ωστόσο, υπάρχει επίσης αρκετή υποστήριξη για θρησκευτικούς συλλογισμούς στην δημόσια διοίκηση.  
+• Η συντριπτική πλειοψηφία των Κυπρίων πιστεύει ακράδαντα ότι οι θρησκευτικοί ηγέτες δεν πρέπει να επηρεάζουν τις πολιτικές αποφάσεις και τις εκλογικές διαδικασίες.  
+• Ταυτόχρονα, ένα σημαντικό μέρος του πληθυσμού πιστεύει ότι η πίστη στον Θεό είναι απαραίτητο χαρακτηριστικό των πολιτικών και ότι η θρησκεία πρέπει να υπερισχύει της επιστήμης.  
+• Γενικά, οι Τουρκοκύπριοι τείνουν να εκφράζουν ελαφρώς πιο κοσμικές απόψεις από τους Ελληνοκύπριους.  
+<br>
+__Kıbrıslıların dinin kamusal hayattaki yeri hakkında görüşleri__  
+Kıbrıs’taki dini eğilimleri inceledikten sonra, şimdi de Kıbrıs halkının dinin siyaset ve kamusal hayattaki yeri hakkındaki görüşlerine bakıyoruz.  
+• Her iki toplumda da hâkim görüş din ve devlet işlerinin ayrı olması gerektiği yönünde. Bununla
+beraber, yönetişim ve kamusal hayatta dini muhakemeye yönelik azımsanmayacak düzeyde bir destek de mevcut.  
+• Kıbrıslıların çoğunluğu, dini liderlerin hükumet politikalarını etkilememesi gerektiğini yönünde oldukça net bir görüşe sahip.  
+• Aynı zamanda nüfusun büyük bir kısmı, Tanrı inancının siyasetçilerde bulunması gereken bir özellik olduğunu ve dinin bilimden daha önemli olduğunu düşünüyor.  
+• Genel olarak bakıldığında, Kıbrıs Türklerinin laik görüşler dile getirmeye Kıbrıs Rumlarından biraz daha eğilimli olduğu söylenebilir.  
+
+<br>
+Our last blog post showed that [religious values are prevalent in Cyprus](https://www.c-pot.org/post/religiosity-in-cyprus){target="_blank"} and form an important part of people’s identity. How do Cypriots view the role of religion in society and public life though? To what extent does this religiosity translate to religious preferences in political processes?  
+<br>
+This post examines Cypriots’ attitudes towards: (i) the role of religious leaders in governance, (ii) the political convictions of politicians, and (iii) whether religion should take precedence over science. The analysis uses World Values Survey and European Values Study data from 2006, 2008 and 2011. Even though these data are not particularly recent, they comprise perhaps the only publically available surveys of religious preferences among both Greek-Cypriots and Turkish-Cypriots, and can still provide important insights.  
+<br>
+While there is widespread belief among Cypriots in the _direct_ separation of religion and government, a significant segment of the population still espouses religious values in public affairs in an indirect way. Around three quarters of Cypriots across both communities feel that religious leaders should not influence government decisions and election processes, according to 2006 data. Only around 5-12% of respondents felt that religious leaders should exert such influence. 
+
+```{r echo=FALSE}
+
+plot_religious_influence
+
+```
+<br>
+However, at the same time favourable attitudes for religious values in public leaders exist. A sizable segment of the population in both communities feels that belief in God is a necessary trait for politicians to have. 2008 surveys show that almost half of Greek-Cypriots felt that politicians who do not believe in God are unfit for public office, whereas a third of Turkish-Cypriots felt this way. Similarly, in 2011 around 40% of Greek-Cypriots and 30% of Turkish-Cypriots said that religion should take precedence over science when the two conflict.  
+<br>
+```{r echo=FALSE}
+
+plot_public_office
+
+```
+<br><br>
+```{r echo=FALSE}
+
+plot_science
+```
+<br><br>
+Overall, Turkish-Cypriots tend to express slightly more secular preferences than Greek-Cypriots, which can be expected given the [lower levels of religiosity](https://www.c-pot.org/post/religiosity-in-cyprus){target="_blank"} that Turkish-Cypriots tend to report. The significance of religion in many Cypriots’ identity is reflected in the non-trivial support for leadership with religious values, and for the precedence of religion over science. This may explain the significant support for public policy preferences that favor religious reasoning, as seen for instance in the initial [rejection of restrictions on gatherings due to COVID-19](https://cyprus-mail.com/2020/04/13/coronavirus-morphou-bishop-says-if-virus-doesnt-kill-people-theyll-die-from-something-else){target="_blank"} by churches and some Greek-Cypriot church-goers. 
+<br><br>
+ __Data sources__  
+World Values Survey: WVS 5, WVS 6 <br>
+European Values Study: EVS 4
+<br><br>
+__References__  
+_Cyprus Mail._ (2020). Coronavirus: Police investigating defiant Morphou bishop for holding mass. [Available here.](https://cyprus-mail.com/2020/04/13/coronavirus-morphou-bishop-says-if-virus-doesnt-kill-people-theyll-die-from-something-else){target="_blank"}
+

@@ -486,7 +486,7 @@ plot_importance_god_sub <- ggplot(importance_god_sub, aes(x=Group, y=mean, label
 • A large majority of Cypriots state that God plays an important role in their life.
 <br><br>
 __Η Θρησκευτικότητα στην Κύπρο__  
-Πόσο σημαντικός είναι ο ρόλος της θρησκείας στις ζωές των Κυπρίων, δεδομένων των παγκόσμιων τάσεων γύρω από την θρησκευτικότητα;   
+Πόσο σημαντικός είναι ο ρόλος της θρησκείας στις ζωές των Κυπρίων, δεδομένου των παγκόσμιων τάσεων γύρω από την θρησκευτικότητα;   
 • Οι θρησκευτικές αξίες είναι διαδεδομένες και κατοχυρωμένες στην κοινωνική ταυτότητα των Κυπρίων, ανεξάρτητα από το αν κάποιος θεωρεί τον εαυτό του ως θρησκευόμενο.  
 • Σχεδόν όλοι οι Κύπριοι δηλώνουν πως ανήκουν σε μία θρησκεία ή θρησκευτικό δόγμα, ασχέτος από το αν ασκούν θρησκευτικά καθήκοντα ή συμμετέχουν σε θρησκευτικές λιτουργίες.  
 • Γενικά, οι Ελληνοκύπριοι τείνουν να είναι λίγο πιο θρήσκοι από τους Τουρκοκύπριους.  
@@ -501,7 +501,7 @@ Dindarlık konusundaki küresel eğilimlerin ışığında, Kıbrıslıların ha
 <br>
 This post explores the importance of religion in Cypriots’ lives in light of global trends in religiosity. The decline of traditional religious practices and beliefs across developed societies has eroded the role of religious institutions in people’s lives. At the same time, traditional religious beliefs and values remain strong in developing societies, meaning that there are more people with such beliefs in the world (Norris & Inglehart, 2004).  
 <br>
-How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Study data from 2006, 2008 and 2011.  
+How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Study data from 2006, 2008 and 2011. While these data are not particularly recent, they comprise perhaps the only publically available surveys of religious preferences across both Greek-Cypriots and Turkish-Cypriots, and can still provide important insights.  
 <br>
 Religious belonging is pervasive in Cypriot society, irrespective of whether people practice or attend religious services. Nearly all Cypriots consider themselves to be part of a religion or religious denomination. Across the three surveys, 93-99% of Greek-Cypriots and Turkish-Cypriots state that they belong to a religion.  
 <br><br>

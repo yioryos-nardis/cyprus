@@ -1,0 +1,2934 @@
+---
+title: Cypriots’ Views on Religion’s Role in Public Life
+author: Yioryos Nardis
+date: '2020-06-28'
+slug: cypriots-views-on-religions-role-in-public-life
+categories: []
+tags:
+  - religion
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access World/European Values Survey data files from website 
+load("WVS2006.rdata")
+load("EVS2008.rdata")
+load("WVS2011.rdata")
+
+
+#####Recoding variables#####  
+
+#People who belong to different religions are probably just as moral as those who belong to mine
+describe(WVS2011$V156) #recode to missing
+WVS2011$V156_rec <- car::recode(WVS2011$V156, as.factor = T, "'-5' = NA; '-3' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Disagree'; '4' = 'Strongly disagree'")
+WVS2011$V156_rec <- factor(WVS2011$V156_rec, levels = c(levels(WVS2011$V156_rec), "Neither agree or disagree"))
+levels(WVS2011$V156_rec)
+describe(WVS2011$V156_rec)
+
+#The only acceptable religion is my religion.
+describe(WVS2011$V154) #recode to missing
+WVS2011$V154_rec <- car::recode(WVS2011$V154, as.factor = T, "'-5' = NA; '-4' = NA; '-3' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Disagree'; '4' = 'Strongly disagree'")
+WVS2011$V154_rec <- factor(WVS2011$V154_rec, levels = c(levels(WVS2011$V154_rec), "Neither agree or disagree"))
+levels(WVS2011$V154_rec)
+describe(WVS2011$V154_rec)
+
+
+#Religious leaders should not influence government decisions
+describe(WVS2006$V197) #recode to missing
+WVS2006$V197_rec <- car::recode(WVS2006$V197, as.factor = T, "'-5' = NA; '-4' = NA; '-2' = 'NR'; '-1' = 'DK'; '1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Neither agree or disagree'; '4' = 'Disagree'; '5' = 'Strongly disagree'")
+describe(WVS2006$V197_rec)
+
+describe(EVS2008$v135) #no recoding for missing
+EVS2008$v135_rec <- car::recode(EVS2008$v135, as.factor = T, "'1' = 'Strongly agree'; '2' = 'Agree'; '3' = 'Neither agree or disagree'; '4' = 'Disagree'; '5' = 'Strongly disagree'")
+EVS2008$v135_rec <- factor(EVS2008$v135_rec, levels = c(levels(EVS2008$v135_rec), "DK", "NR"))
+levels(EVS2008$v135_rec)
+describe(EVS2008$v135_rec)
+
+
+#Reordering factors
+WVS2011$V156_rec <- factor(WVS2011$V156_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+WVS2011$V154_rec <- factor(WVS2011$V154_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+WVS2006$V197_rec <- factor(WVS2006$V197_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+EVS2008$v135_rec <- factor(EVS2008$v135_rec, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:7) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Lists for function
+r1 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V155_rec") #Cypriots 2011 - All religions should be taught in our public schools
+r2 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V156_rec") #Cypriots 2011 - People who belong to different religions are probably just as moral as those who belong to mine
+r3 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V154_rec") #Cypriots 2011 - The only acceptable religion is my religion
+r4 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V194_rec") #Cypriots 2006 - Politicians who do not believe in God are unfit for public office
+r5 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V197_rec") #Cypriots 2006 - Religious leaders should not influence government decisions
+
+r6 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V155_rec") #GCC & TCC 2011 - All religions should be taught in our public schools
+r7 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V156_rec") #GCC & TCC 2011 - People who belong to different religions are probably just as moral as those who belong to mine
+r8 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V154_rec") #GCC & TCC 2011 - The only acceptable religion is my religion
+r9 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V194_rec") #GCC & TCC 2006 - Politicians who do not believe in God are unfit for public office
+r10 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V197_rec") #GCC & TCC 2006 - Religious leaders should not influence government decisions
+r11 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v134_rec") #GCC & TCC 2008 - Politicians who do not believe in God are unfit for public office
+r12 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v135_rec") #GCC & TCC 2008 - Religious leaders should not influence government decisions
+
+
+
+#####Calculating estimates#####
+
+#Calculating estimates for Cyprus overall
+dataInfo <- list(r1, r2, r3, r4, r5)
+religion_public <- applyFunc("196", dataInfo) 
+religion_public$group <- c("Cypriots")
+religion_public$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+colnames(religion_public) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "group", "agree")
+
+
+#Calculating estimates for two Cypriot communities
+dataInfo <- list(r6, r7, r8, r9, r10, r11, r12)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+colnames(results) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "public_office_2008", "government_2008")
+results$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+results$group <- c("Greek-Cypriots")
+
+results2 <- applyFunc("Turkish-Cypriots", dataInfo) 
+colnames(results2) <- c("public_schools_2011", "moral_2011", "acceptable_2011", "public_office_2006", "government_2006", "public_office_2008", "government_2008")
+results2$agree <- c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR")
+results2$group <- c("Turkish-Cypriots")
+results <- rbind(results2, results)
+
+religion_public <- bind_rows(religion_public, results)
+
+
+#Calculating overall Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+religion_public$weight <- c(rep(NA, 7), rep(194750 / 799774, 7), rep(605024 / 799774, 7))
+
+religion_public <- religion_public %>% mutate(public_office_2008_w = public_office_2008 * weight)
+religion_public <- religion_public %>% mutate(government_2008_w = government_2008 * weight)
+
+religion_public_cyp <- religion_public  %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+religion_public_cyp <- religion_public_cyp %>% select(-"public_schools_2011", -"moral_2011", -"acceptable_2011", -"public_office_2006", -"government_2006", -"weight")
+
+religion_public_cyp <- religion_public_cyp %>% 
+  group_by(agree) %>% 
+  summarise(public_office_2008 = sum(public_office_2008_w),
+            government_2008 = sum(government_2008_w))
+
+religion_public_cyp$group <- c("Cypriots")
+religion_public <- religion_public %>% select(-"public_office_2008_w", -"government_2008_w", -"weight")
+
+religion_public <- left_join(religion_public, religion_public_cyp, by=c("group","agree"))
+religion_public <- within(religion_public , government_2008.x <- ifelse(is.na(government_2008.x), government_2008.y, government_2008.x))
+religion_public <- within(religion_public , public_office_2008.x <- ifelse(is.na(public_office_2008.x), public_office_2008.y, public_office_2008.x))
+
+religion_public <- religion_public %>% select(-"public_office_2008.y", -"government_2008.y")
+religion_public$public_office_2008.x
+
+religion_public <- rename(religion_public, public_office_2008 = public_office_2008.x)
+religion_public <- rename(religion_public, government_2008 = government_2008.x)
+
+religion_public <- religion_public %>% mutate_at(vars(-group, -agree), mult_one)
+
+religion_public$group <- as.factor(religion_public$group) 
+religion_public$agree <- as.factor(religion_public$agree) 
+religion_public$agree<- factor(religion_public$agree, levels = c("Strongly agree", "Agree", "Neither agree or disagree", "Disagree", "Strongly disagree", "DK", "NR"))
+
+religion_public <- religion_public[c(1:5, 8, 9, 6, 7)]
+save(religion_public, file=("religion_public.rdata"))
+```
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+load("religion_public.rdata")
+
+#Reshaping from wide to long
+religion_public_06_08 <- to_long(religion_public, "year", c("public_office", "government"), 
+                c("public_office_2006", "public_office_2008"),
+                c("government_2006", "government_2008"))
+
+religion_public_06_08 <- religion_public_06_08[c(-1,-2,-3)]
+religion_public_06_08$year <- gsub("public_office_", "", religion_public_06_08$year)
+religion_public_06_08$year <- as.factor(religion_public_06_08$year) 
+religion_public_2011 <- religion_public[c(1:3,6,7,8,9)]
+
+
+#####Plots#####
+
+##PLOT 1: Religious leaders should not influence how people vote in elections
+#Horizontal bar chart
+elections <- select(religion_public, "group", "elections_2006", "agree")
+elections <- subset(elections, group != "Cypriots" & (agree != "DK" & agree != "NR"))
+elections <- spread(elections, agree, elections_2006)
+colnames(elections) <- c("group", "Strongly_agree", "Agree", "Neither_agree_or_disagree", "Disagree", "Strongly_disagree")
+elections$group <- droplevels(elections$group)
+elections$group <- factor(elections$group, levels = c("Turkish-Cypriots", "Greek-Cypriots"))
+
+top_labels <- c("Strongly<br>agree", "Agree", "Disagree", "Neither agree<br>or disagree", "Strongly<br>disagree")
+
+plot_elections <- plot_ly(elections, x = ~Strongly_agree, y = ~group, type = 'bar', orientation = 'h',
+                           marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                         line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~Agree, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~Neither_agree_or_disagree, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~Disagree, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~Strongly_disagree, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(xaxis = list(title = "Religious leaders should not influence how people vote in elections",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE,
+                      domain = c(0.15, 1)),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 120, r = 10, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0.08, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree / 2, y = ~group,
+                  text = paste(elections[,"Strongly_agree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree / 2, y = ~group,
+                  text = paste(elections[,"Agree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree / 2, y = ~group,
+                  text = paste(elections[,"Neither_agree_or_disagree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree + Disagree / 2, y = ~group,
+                  text = paste(elections[,"Disagree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Neither_agree_or_disagree + Disagree + Strongly_disagree/ 2, y = ~group,
+                  text = paste(elections[,"Strongly_disagree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(34.0 / 2, 34.0 + 45.8 / 2, 34.0 + 45.8 + 14.9 / 2, 34.0 + 45.8 + 14.9 + 4.0 / 2, 34.0 + 45.8 + 14.9 + 4.0 + 0.7 / 2),
+                  y = 1.05,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+
+
+
+##PLOT 2: Religious leaders should not influence government decisions
+##Stacked bar chart
+
+religion_public_06_08_sub <- subset(religion_public_06_08, group !="Cypriots" & (agree != 'DK' & agree != 'NR'))
+religion_public_06_08_sub <- select(religion_public_06_08_sub, -"public_office")
+
+#calculate the position of the label
+year_one <- filter(religion_public_06_08_sub, year == 2006) %>% 
+  group_by(group) %>% arrange(desc(agree)) %>% 
+  mutate(pos = cumsum(government) - government / 2)   
+
+plot_government <- ggplot() +
+  geom_bar(data=religion_public_06_08_sub, 
+           aes(y = government, x = group, fill = agree), 
+           stat="identity",
+           position='stack', 
+           width = .6) +
+  facet_grid( ~ year) +
+  geom_text(data = year_one, 
+            aes(y = pos, x = group, label = government)) +
+  labs(title="'To what extent do you agree with the following statement? Religious leaders should not influence government decisions'", 
+       subtitle = "Cyprus Public Opinion Trends    www.c-pot.org",
+       caption = "Data: World Values Survey 5 & European Values Study 4",
+       y = "", x = "") +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0)) +
+  theme(legend.title = element_blank()) +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey"), 
+        panel.grid.minor.y = element_line(size=.1, color="grey")) +
+  aes(stringr::str_wrap(Group, 2), Rate) + xlab(NULL) + ylab(NULL)
+
+
+
+##PLOT 3: Politicians who do not believe in God are unfit for public office
+##Stacked Grouped Bar Chart
+
+religion_public_06_08_sub <- subset(religion_public_06_08, group !="Cypriots" & (agree != 'DK' & agree != 'NR'))
+
+# calculate the position of the label
+year_one <- filter(religion_public_06_08_sub, year == 2006) %>% 
+  group_by(group) %>% arrange(desc(agree)) %>% 
+  mutate(pos = cumsum(public_office) - public_office / 2) 
+  
+plot_public_office <- ggplot() +
+  geom_bar(data=religion_public_06_08_sub, 
+           aes(y = public_office, x = group, fill = agree), 
+           stat="identity",
+           position='stack', 
+           width = .6) +
+  facet_grid( ~ year) +
+  geom_text(data = year_one, 
+            aes(y = pos, x = group, label = public_office)) +
+  labs(title="XX in Cyprus", 
+       subtitle = "www.c-pot.org",
+       caption = "Data: World Values Survey 5 & European Values Study 4",
+       y = "", x = "") +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0)) +
+  theme(legend.title = element_blank()) +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey"), 
+        panel.grid.minor.y = element_line(size=.1, color="grey")) +
+  aes(stringr::str_wrap(Group, 2), Rate) + xlab(NULL) + ylab(NULL)
+
+
+
+##PLOT 4: Whenever science and religion conflict, religion is always right
+
+science <- select(religion_public, "group", "science_2011", "agree")
+science <- subset(science, group != "Cypriots" & (agree != "Neither agree or disagree" & agree != "NR"))
+science <- spread(science, agree, science_2011)
+colnames(science) <- c("group", "Strongly_agree", "Agree", "Disagree", "Strongly_disagree", "DK")
+science$group <- droplevels(science$group)
+science$group <- factor(science$group, levels = c("Turkish-Cypriots", "Greek-Cypriots"))
+
+top_labels <- c("Strongly<br>agree", "Agree", "Disagree", "Strongly<br>disagree", "Don\'t<br>know")
+
+plot_science <- plot_ly(science, x = ~Strongly_agree, y = ~group, type = 'bar', orientation = 'h',
+                           marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                         line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~Agree, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~Disagree, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~Strongly_disagree, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~DK, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(xaxis = list(title = "Whenever science and religion conflict, religion is always right",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE,
+                      domain = c(0.15, 1)),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 120, r = 10, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0.08, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree / 2, y = ~group,
+                  text = paste(science[,"Strongly_agree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree / 2, y = ~group,
+                  text = paste(science[,"Agree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree / 2, y = ~group,
+                  text = paste(science[,"Disagree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree + Strongly_disagree / 2, y = ~group,
+                  text = paste(science[,"Strongly_disagree"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~Strongly_agree + Agree + Disagree + Strongly_disagree + DK/ 2, y = ~group,
+                  text = paste(science[,"DK"], '%'),
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(13.3 / 2, 13.3 + 28.2 / 2, 13.3 + 28.2 + 34.0 / 2, 13.3 + 28.2 + 34.0 + 12.5 / 2, 13.3 + 28.2 + 34.0 + 12.5 + 12.1 / 2),
+                  y = 1.05,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 12,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+```
+
+<br>
+
+(i)
+plot_government
+plot_elections
+
+
+```{r echo=FALSE}
+
+plot_government
+plot_elections
+```
+
+(ii)
+plot_public_office
+
+
+```{r echo=FALSE}
+
+plot_public_office
+```
+
+(iii)
+plot_science
+
+
+```{r echo=FALSE}
+
+plot_science
+```
+
+
+
+
+
+
+<!--chapter:end:cypriots-views-on-religions-role-in-public-life.Rmd-->
+
+---
+title: 'How Disaffected are Cypriots with Political Institutions?: European Union Institutions'
+author: 'Yioryos Nardis'
+date: '2019-11-18'
+slug: disaffection-with-eu-institutions
+categories: []
+tags:
+  - politics
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(survey)
+library(dplyr)
+library(stats)
+library(knitr)
+library(Hmisc)
+library(webshot)
+library(processx)
+library(car)
+library(tidyr)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+#Access Eurobarometer data files from websites of EU Open Data Portal, ICPSR, or GESIS
+load("EB2004.62.rdata")
+load("EB2005.63.4.rdata")
+load("EB2006.65.2.rdata")
+load("EB2007.68.1.rdata")
+load("EB2008.70.1.rdata")
+load("EB2009.71.3.rdata")
+load("EB2010.74.2.rdata")
+load("EB2011.76.3.rdata")
+load("EB2012.77.3.rdata")
+load("EB2013.79.3.rdata")
+load("EB2014.81.4.rdata")
+load("EB2015.84.3.rdata")
+load("EB2016.85.2.rdata")
+load("EB2017.87.3.rdata")
+load("EB2018.89.1.rdata")
+
+
+#####Recoding country groupings to pass into survey estimate function#####  
+#Inconsistent variable structures across dataframes require use of two packages: 'car' and 'dplyr'
+EB2004.62$V6 <- car::recode(EB2004.62$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2005.63.4$V6 <- car::recode(EB2005.63.4$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2006.65.2$V6 <- car::recode(EB2006.65.2$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2007.68.1$V6 <- car::recode(EB2007.68.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2008.70.1$V6 <- car::recode(EB2008.70.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2009.71.3$COUNTRY <- car::recode(EB2009.71.3$COUNTRY,"18 = 'GCC'; 32 = 'TCC'")
+EB2010.74.2$V6 <- car::recode(EB2010.74.2$V6,"'(19) Cyprus (Republic)' = 'GCC'; '(33) Cyprus (CY-TCC)' = 'TCC'")
+EB2011.76.3$COUNTRY <- dplyr::recode(EB2011.76.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2012.77.3$COUNTRY <- dplyr::recode(EB2012.77.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2013.79.3$COUNTRY <- dplyr::recode(EB2013.79.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2014.81.4$COUNTRY <- dplyr::recode(EB2014.81.4$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2015.84.3$COUNTRY <- dplyr::recode(EB2015.84.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2016.85.2$COUNTRY <- dplyr::recode(EB2016.85.2$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2017.87.3$COUNTRY <- dplyr::recode(EB2017.87.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2018.89.1$country <- car::recode(EB2018.89.1$country,"19 = 'GCC'; 33 = 'TCC'")
+EB2018.89.1$country <- as.factor(EB2018.89.1$country)
+
+EB2010.74.2$V25 <- dplyr::recode(EB2010.74.2$V25, "(1) EU15" = "1")
+EB2011.76.3$VEU15 <- dplyr::recode(EB2011.76.3$VEU15, "(1) EU 15" = "1")
+EB2012.77.3$VEU15 <- dplyr::recode(EB2012.77.3$VEU15, "(1) EU 15" = "1")
+EB2013.79.3$EU15 <- dplyr::recode(EB2013.79.3$EU15, "(1) EU-15" = "1")
+EB2014.81.4$EU15 <- dplyr::recode(EB2014.81.4$EU15 , "(1) EU15" = "1")
+EB2015.84.3$EU15 <- dplyr::recode(EB2015.84.3$EU15, "(1) EU15" = "1")
+EB2016.85.2$EU15 <- dplyr::recode(EB2016.85.2$EU15, "(1) EU15" = "1")
+EB2017.87.3$EU15 <- dplyr::recode(EB2017.87.3$EU15, "(1) EU15" = "1")
+EB2018.89.1$eu15 <- car::recode(EB2018.89.1$eu15, "'EU15' = '1'")
+EB2018.89.1$eu15 <- as.factor(EB2018.89.1$eu15)
+
+EB2010.74.2$V29 <- dplyr::recode(EB2010.74.2$V25, "(1) EU25" = "1")
+EB2011.76.3$VEU25 <- dplyr::recode(EB2011.76.3$VEU25, "(1) EU 25" = "1")
+EB2012.77.3$VEU25 <- dplyr::recode(EB2012.77.3$VEU25, "(1) EU 25" = "1")
+EB2013.79.3$EU25 <- dplyr::recode(EB2013.79.3$EU25, "(1) EU-25" = "1")
+EB2014.81.4$EU25 <- dplyr::recode(EB2014.81.4$EU25 , "(1) EU25" = "1")
+EB2015.84.3$EU25 <- dplyr::recode(EB2015.84.3$EU25, "(1) EU25" = "1")
+EB2016.85.2$EU25 <- dplyr::recode(EB2016.85.2$EU25, "(1) EU25" = "1")
+EB2017.87.3$EU25 <- dplyr::recode(EB2017.87.3$EU25, "(1) EU25" = "1")
+EB2018.89.1$eu25 <- car::recode(EB2018.89.1$eu25, "'EU15' = '1'")
+EB2018.89.1$eu25  <- as.factor(EB2018.89.1$eu25 )
+
+#save(EB2004.62, file=("EB2004.62.rdata"))
+#save(EB2005.63.4, file=("EB2005.63.4.rdata"))
+#save(EB2005.64.2, file=("EB2005.64.2.rdata"))
+#save(EB2006.65.2, file=("EB2006.65.2.rdata"))
+#save(EB2007.68.1, file=("EB2007.68.1.rdata"))
+#save(EB2008.70.1, file=("EB2008.70.1.rdata"))
+#save(EB2009.71.3, file=("EB2009.71.3.rdata"))
+#save(EB2010.74.2, file=("EB2010.74.2.rdata"))
+#save(EB2011.76.3, file=("EB2011.76.3.rdata"))
+#save(EB2012.77.3, file=("EB2012.77.3.rdata"))
+#save(EB2013.79.3, file=("EB2013.79.3.rdata"))
+#save(EB2014.81.4, file=("EB2014.81.4.rdata"))
+#save(EB2015.84.3, file=("EB2015.84.3.rdata"))
+#save(EB2016.85.2, file=("EB2016.85.2.rdata"))
+#save(EB2017.87.3, file=("EB2017.87.3.rdata"))
+#save(EB2018.89.1, file=("EB2018.89.1.rdata"))
+
+######Lists with data, weights, groups, & variables to pass into survey estimate function
+
+#Trust in EU#
+#Cyprus
+eu1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V95_fac")
+eu2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V81_fac")
+eu3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V91_fac")
+eu4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V152_fac")
+eu5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V230_fac")
+eu6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA9_5_fac")
+eu7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V302_fac")
+eu8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA10_8_fac")
+eu9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA13_4_fac")
+eu10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA12_4_fac")
+eu11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA9_4_fac")
+eu12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_10_fac") #GCC
+eu13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8A_9_fac") #GCC
+eu14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_9_fac") #GCC
+eu15 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_7_fac") #TCC
+eu16 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8B_2_fac") #TCC
+eu17 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_2_fac") #TCC
+eu46 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa8a_10_fac") #GCC
+eu47 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa8b_2_fac") #TCC
+
+
+#EU-15
+eu18 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V95_fac")
+eu19 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V81_fac")
+eu20 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V91_fac")
+eu21 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V152_fac")
+eu22 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V230_fac")
+eu23 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA9_5_fac")
+eu24 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V302_fac")
+eu25 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA10_8_fac")
+eu26 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA13_4_fac")
+eu27 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA12_4_fac")
+eu28 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA9_4_fac")
+eu29 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA8A_10_fac")
+eu30 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA8A_9_fac")
+eu31 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA8A_9_fac")
+eu48 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa8a_10_fac")
+
+
+#EU-25
+eu32 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V95_fac")
+eu33 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V81_fac")
+eu34 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V91_fac")
+eu35 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V152_fac")
+eu36 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V230_fac")
+eu37 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA9_5_fac")
+eu38 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V302_fac")
+eu39 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA10_8_fac")
+eu40 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA13_4_fac")
+eu41 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA12_4_fac")
+eu42 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU25", estimate="QA9_4_fac")
+eu43 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA8A_10_fac")
+eu44 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+eu45 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+eu49 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa8a_10_fac")
+
+
+#Trust in EP#
+#Cyprus
+ep1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V202_fac")
+ep2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V168_fac")
+ep3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3018_fac")
+ep4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V191_fac")
+ep5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V274_fac")
+ep6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V331_fac")
+ep8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_1_fac")
+ep10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_1_fac")
+ep11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_1_fac")
+ep12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_1_fac")
+ep13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_1_fac")
+ep14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_1_fac")
+ep43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_1_fac")
+
+
+#EU-15
+ep15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V202_fac")
+ep16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V168_fac")
+ep17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3018_fac")
+ep18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V191_fac")
+ep19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V274_fac")
+ep20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_1_fac")
+ep21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V331_fac")
+ep22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_1_fac")
+ep23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_1_fac")
+ep24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_1_fac")
+ep25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_1_fac")
+ep26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_1_fac")
+ep27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_1_fac")
+ep28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_1_fac")
+ep44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_1_fac")
+
+
+#EU-25
+ep29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V202_fac")
+ep30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V168_fac")
+ep31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3018_fac")
+ep32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V191_fac")
+ep33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V274_fac")
+ep34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_1_fac")
+ep35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V331_fac")
+ep36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_1_fac")
+ep37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_1_fac")
+ep38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_1_fac")
+ep39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_1_fac")
+ep40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_1_fac")
+ep41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_1_fac")
+ep42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_1_fac")
+ep45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_1_fac")
+
+
+#Trust in EC#
+#Cyprus
+ec1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V203_fac")
+ec2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V169_fac")
+ec3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3019_fac")
+ec4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V192_fac")
+ec5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V275_fac")
+ec6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V332_fac")
+ec8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_2_fac")
+ec10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_2_fac")
+ec11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_2_fac")
+ec12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_2_fac")
+ec13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_2_fac")
+ec14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_2_fac")
+ec43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_2_fac")
+
+
+#EU-15
+ec15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V203_fac")
+ec16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V169_fac")
+ec17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3019_fac")
+ec18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V192_fac")
+ec19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V275_fac")
+ec20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_2_fac")
+ec21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V332_fac")
+ec22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_2_fac")
+ec23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_2_fac")
+ec24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_2_fac")
+ec25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_2_fac")
+ec26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_2_fac")
+ec27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_2_fac")
+ec28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_2_fac")
+ec44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_2_fac")
+
+
+#EU-25
+ec29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V203_fac")
+ec30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V169_fac")
+ec31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3019_fac")
+ec32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V192_fac")
+ec33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V275_fac")
+ec34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_2_fac")
+ec35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V332_fac")
+ec36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_2_fac")
+ec37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_2_fac")
+ec38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_2_fac")
+ec39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_2_fac")
+ec40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_2_fac")
+ec41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_2_fac")
+ec42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_2_fac")
+ec45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_2_fac")
+
+
+#Trust in ECB
+#Cyprus
+ecb1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V207_fac")
+ecb2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V172_fac")
+ecb3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3022_fac")
+ecb4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V196_fac")
+ecb5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V277_fac")
+ecb6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA14_3_fac")
+ecb7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V334_fac")
+ecb8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA14_4_fac")
+ecb9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA17_4_fac")
+ecb10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA18_4_fac")
+ecb11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA15_3_fac") #Not asked in TCC
+ecb12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA13_3_fac") #Not asked in TCC
+ecb13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA15_3_fac") #Not asked in TCC
+ecb14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA14_3_fac") #Not asked in TCC
+ecb43 <- list(passedData = EB2018.89.1, passedWeights="w1", group="country", estimate="qa14_3_fac") #Not asked in TCC
+
+
+#EU-15
+ecb15 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V207_fac")
+ecb16 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V172_fac")
+ecb17 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V3022_fac")
+ecb18 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V196_fac")
+ecb19 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V277_fac")
+ecb20 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA14_3_fac")
+ecb21 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V334_fac")
+ecb22 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA14_4_fac")
+ecb23 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA17_4_fac")
+ecb24 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA18_4_fac")
+ecb25 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA15_3_fac")
+ecb26 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA13_3_fac")
+ecb27 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA15_3_fac")
+ecb28 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA14_3_fac")
+ecb44 <- list(passedData = EB2018.89.1, passedWeights="w11", group="eu15", estimate="qa14_3_fac")
+
+
+#EU-25
+ecb29 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V207_fac")
+ecb30 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V172_fac")
+ecb31 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V3022_fac")
+ecb32 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V196_fac")
+ecb33 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V277_fac")
+ecb34 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA14_3_fac")
+ecb35 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V334_fac")
+ecb36 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA14_4_fac")
+ecb37 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA17_4_fac")
+ecb38 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA18_4_fac")
+ecb39 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU15", estimate="QA15_3_fac")
+ecb40 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA13_3_fac")
+ecb41 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA15_3_fac")
+ecb42 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA14_3_fac")
+ecb45 <- list(passedData = EB2018.89.1, passedWeights="w14", group="eu25", estimate="qa14_3_fac")
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Fuction calling 'Func' and calcuating weighted survey estimates for a given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#####Calculating Trust in EU Institutions
+#Trust in EU Institutions among GCC
+dataInfo <- list(eu1, eu2, eu3, eu4, eu5, eu6, eu7, eu8, eu9, eu10, eu11, eu12, eu13, eu14, eu46) #Trust in EU
+trust_eur <- applyFunc("trust_eu_gcc", "GCC", dataInfo)
+
+dataInfo <- list(ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13, ep14, ep43) #Trust in EP
+results <- applyFunc("trust_ep_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec1, ec2, ec3, ec4, ec5, ec6, ec7, ec8, ec9, ec10, ec11, ec12, ec13, ec14, ec43) #Trust in EC
+results <- applyFunc("trust_ec_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb1, ecb2, ecb3, ecb4, ecb5, ecb6, ecb7, ecb8, ecb9, ecb10, ecb11, ecb12, ecb13, ecb14, ecb43) #Trust in ECB
+results <- applyFunc("trust_ecb_gcc", "GCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among TCC
+dataInfo <- list(eu1, eu2, eu3, eu4, eu5, eu6, eu7, eu8, eu9, eu10, eu11, eu15, eu16, eu17, eu47) #Trust in EU
+results <- applyFunc("trust_eu_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13, ep14, ep43) #Trust in EP
+results <- applyFunc("trust_ep_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec1, ec2, ec3, ec4, ec5, ec6, ec7, ec8, ec9, ec10, ec11, ec12, ec13, ec14, ec43) #Trust in EC
+results <- applyFunc("trust_ec_tcc", "TCC", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb1, ecb2, ecb3, ecb4, ecb5, ecb6, ecb7, ecb8, ecb9, ecb10) #Trust in ECB
+results <- applyFunc("trust_ecb_tcc", "TCC", dataInfo)
+results <- rbind(results, NA, NA, NA, NA, NA)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among EU-15
+dataInfo <- list(eu18, eu19, eu20, eu21, eu22, eu23, eu24, eu25, eu26, eu27, eu28, eu29, eu30, eu31, eu48) #Trust in EU
+results <- applyFunc("trust_eu_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep15, ep16, ep17, ep18, ep19, ep20, ep21, ep22, ep23, ep24, ep25, ep26, ep27, ep28, ep44) #Trust in EP
+results <- applyFunc("trust_ep_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec15, ec16, ec17, ec18, ec19, ec20, ec21, ec22, ec23, ec24, ec25, ec26, ec27, ec28, ec44) #Trust in EC
+results <- applyFunc("trust_ec_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb15, ecb16, ecb17, ecb18, ecb19, ecb20, ecb21, ecb22, ecb23, ecb24, ecb25, ecb26, ecb27, ecb28, ecb44) #Trust in ECB
+results <- applyFunc("trust_ecb_eu15", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+
+#Trust in EU Institutions among EU-25
+dataInfo <- list(eu32, eu33, eu34, eu35, eu36, eu37, eu38, eu39, eu40, eu41, eu42, eu43, eu44, eu45, eu49) #Trust in EU
+results <- applyFunc("trust_eu_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ep29, ep30, ep31, ep32, ep33, ep34, ep35, ep36, ep37, ep38, ep39, ep40, ep41, ep42, ep45) #Trust in EP
+results <- applyFunc("trust_ep_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ec29, ec30, ec31, ec32, ec33, ec34, ec35, ec36, ec37, ec38, ec39, ec40, ec41, ec42, ec45) #Trust in EC
+results <- applyFunc("trust_ec_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+dataInfo <- list(ecb29, ecb30, ecb31, ecb32, ecb33, ecb34, ecb35, ecb36, ecb37, ecb38, ecb39, ecb40, ecb41, ecb42, ecb45) #Trust in ECB
+results <- applyFunc("trust_ecb_eu25", "1", dataInfo)
+trust_eur <- cbind(trust_eur, results)
+
+trust_eur$year <- c(2004:2018)
+
+
+#####Reshaping from wide to long
+trust_eur <- to_long(trust_eur, "group", c("trust_eu", "trust_ep", "trust_ec", "trust_ecb"), 
+                    c("trust_eu_gcc", "trust_eu_tcc", "trust_eu_eu15", "trust_eu_eu25"),
+                    c("trust_ep_gcc", "trust_ep_tcc", "trust_ep_eu15", "trust_ep_eu25"),
+                    c("trust_ec_gcc", "trust_ec_tcc", "trust_ec_eu15", "trust_ec_eu25"),
+                    c("trust_ecb_gcc", "trust_ecb_tcc", "trust_ecb_eu15", "trust_ecb_eu25"))
+
+trust_eur$group <- dplyr::recode(trust_eur$group, "trust_eu_gcc" = "Greek-Cypriots", "trust_eu_tcc" = "Turkish-Cypriots", "trust_eu_eu15" = "EU-15", "trust_eu_eu25" = "EU-25")
+trust_eur
+
+
+#Calculating combined Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+trust_eur$weight <- c(552213/709314, 552213/709314, 552213/709314, 596752/753853, 638900/782126, 638900/782126, 651400/794626, 660400/803626, 651400/794626, 660400/803626, 724084/867310, 724084/867310, 724084/867310, 741308/884534, 741308/884534, 
+                     157101/709314, 157101/709314, 157101/709314, 157101/753853, 143226/782126, 143226/782126, 143226/794626, 143226/803626, 143226/794626, 143226/803626, 143226/867310, 143226/867310, 143226/867310, 143226/884534, 143226/884534,
+                     rep(NA, 30))
+
+trust_eur <- trust_eur %>% mutate(trust_eu_w = trust_eu * weight)
+trust_eur <- trust_eur %>% mutate(trust_ep_w = trust_ep * weight)
+trust_eur <- trust_eur %>% mutate(trust_ec_w = trust_ec * weight)
+trust_eur <- trust_eur %>% mutate(trust_ecb_w = trust_ecb * weight)
+
+trust_eur_cyp <- trust_eur %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+trust_eur_cyp <- trust_eur_cyp %>% select(-"trust_eu", -"trust_ep", -"trust_ec", -"trust_ecb", -"weight")
+
+
+trust_eur_cyp <- trust_eur_cyp %>% 
+  group_by(year) %>% 
+  summarise(trust_eu = sum(trust_eu_w),
+            trust_ep = sum(trust_ep_w),
+            trust_ec = sum(trust_ec_w),
+            trust_ecb = sum(trust_ecb_w))
+
+
+trust_eur_cyp$group <- c("Cypriots")
+trust_eur_cyp$weight <- c(NA)
+trust_eur$trust_eu_w <- NULL
+trust_eur$trust_ep_w <- NULL
+trust_eur$trust_ec_w <- NULL
+trust_eur$trust_ecb_w <- NULL
+
+
+#####Function to convert to percentages
+mult_one <- function(var1)
+{
+  var1*100 
+}
+
+
+trust_eur <- rbind(trust_eur, trust_eur_cyp)
+trust_eur <- trust_eur %>% mutate_at(vars(-year, -group, -weight), mult_one)
+trust_eur$group <- as.factor(trust_eur$group)
+rm(trust_eur_cyp)
+
+save(trust_eur, file=("trust_eur.rdata"))
+```
+
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(tidyr)
+library(plotly)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_eur.rdata")
+
+
+#####Plots
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5)
+
+
+#Annotation (individual title) attributes
+anot_trust_eu_cyp <- list(
+  text = "Trust European Union",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_ep_cyp <- list(
+  text = "Trust European Parliament",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_ec_cyp <- list(
+  text = "Trust European Commission",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)  
+
+anot_trust_ecb_cyp <- list(
+  text = "Trust European Central Bank",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_eur_inst_cyp <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.28,
+  y = 0.38,
+  showarrow = FALSE
+)
+
+#Cypriots;9702A7
+#Turkish-Cypriots; FFCF00
+#Greek-Cypriots; 00A876
+#EU-15; FF7800
+#EU-25; 009999
+
+
+#Trust in EU institutions: Cypriots
+trust_eur_cyp <- trust_eur %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cypriots")
+trust_eur_cyp$weight <- NULL
+trust_eur_cyp$group <- droplevels(trust_eur_cyp$group)
+
+
+#Trust in EU
+plot_trust_eu_cyp <- plot_ly(trust_eur_cyp, y = ~trust_eu, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                             marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_eu_cyp)
+             
+                               
+#Trust in EP                                                       
+plot_trust_ep_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ep, x= ~year, color = ~group, type = "scatter",
+                              mode = "lines+markers",
+                              line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                              marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = F) %>%
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=24), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ep_cyp)
+  
+
+#Trust in EC  
+plot_trust_ec_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ec, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                             marker = list(color = factor(trust_eur_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = F) %>%
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ec_cyp) 
+
+
+#Trust in ECB
+pal <- c("#9702A7", "#00A876", "#FFCF00") #using color vector to get around plotly bug with NA
+plot_trust_ecb_cyp <- plot_ly(trust_eur_cyp, y = ~trust_ecb, x= ~year, color = ~group, colors= ~pal, 
+                              type = "scatter",
+                              mode = "lines+markers",
+                              line = list(width = 3), 
+                              marker = list(size = 6),
+                              legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ecb_cyp)  
+
+#Combining plots for Cypriots
+subplot_trust_eu_inst_cyp <- plotly::subplot(plot_trust_eu_cyp, plot_trust_ep_cyp, plot_trust_ec_cyp, plot_trust_ecb_cyp, 
+                                             nrows = 4, margin = 0.04, shareX = TRUE, shareY = FALSE, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = anot_trust_eur_inst_cyp, autosize = F, width = 750, height = 940) 
+
+
+#Trust in EU institutions: EU-15 & EU-25
+trust_eur_eu <- trust_eur %>% filter(group == "Cypriots" | group == "EU-15" | group == "EU-25")
+trust_eur_eu$weight <- NULL
+trust_eur_eu$group <- droplevels(trust_eur_eu$group)
+
+
+#Trust in EU
+plot_trust_eu_eu <- plot_ly(trust_eur_eu, y = ~trust_eu, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                             marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                             legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_eu_cyp)
+
+
+#Trust in EP
+plot_trust_ep_eu <- plot_ly(trust_eur_eu, y = ~trust_ep, x= ~year, color = ~group, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                            marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=24), range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ep_cyp)
+
+
+#Trust in EC
+plot_trust_ec_eu <- plot_ly(trust_eur_eu, y = ~trust_ec, x= ~year, color = ~group, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                            marker = list(color = factor(trust_eur_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ec_cyp)
+
+
+#Trust in ECB
+pal2 <- c("#9702A7","#FF7800", "#009999")
+trust_eur_eu <- trust_eur_eu %>% drop_na("trust_ecb")
+plot_trust_ecb_eu <- plot_ly(trust_eur_eu, y = ~trust_ecb, x= ~year, color = ~group, colors = ~pal2, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(width = 3), 
+                            marker = list(size = 6),
+                            legendgroup = ~group, showlegend = F) %>% 
+  layout(yaxis = list(title = " ", range = c(0,80), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = anot_trust_ecb_cyp)
+
+
+#Combining plots for EU-15 & EU-25
+subplot_trust_eu_inst_eu <- plotly::subplot(plot_trust_eu_eu, plot_trust_ep_eu, plot_trust_ec_eu, plot_trust_ecb_eu, 
+                                             nrows = 4, margin = 0.03, shareX = TRUE, shareY = FALSE, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = anot_trust_eur_inst_cyp, autosize = F, width = 685, height = 940)
+```
+
+<br>
+
+>The second part of the series examining the extent to which global trends in disaffection towards political institutions manifest themselves in Cyprus, focuses on European Union institutions. The analysis finds that trust in the EU and its institutions (European Parliament, European Commission, European Central Bank) fell among Cypriots from 2011 onward. However, this is mostly due to lower trust among Greek-Cypriots, as trust is higher and remained more stable for Turkish-Cypriots during this period. Soon after Cyprus joined the EU, Greek-Cypriots were more trusting of its institutions than Turkish-Cypriots and EU citizens overall. In recent years though, Turkish-Cypriots tend to trust EU institutions around twice as much as Greek-Cypriots.  Trust in European institutions among EU citizens as a whole experienced fewer fluctuations and less decline during this period.
+<br><br>
+__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Θεσμικά Όργανα της Ευρωπαϊκής Ένωσης__  
+Το δεύτερο μέρος της σειράς που εξετάζει αν οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια έναντι στους πολιτικούς θεσμούς εκδηλώνονται στην Κύπρο, επικεντρώνεται στα θεσμικά όργανα της Ευρωπαϊκής Ένωσης. Η ανάλυση διαπιστώνει ότι το ποσοστό των Κυπρίων που εμπιστεύονται την ΕΕ και τους θεσμούς της (Ευρωπαϊκό Κοινοβούλιο, Ευρωπαϊκή Επιτροπή, Ευρωπαϊκή Κεντρική Τράπεζα) μειώθηκε από το 2011 και μετά. Ωστόσο, αυτό οφείλεται κυρίως στη μειωμένη εμπιστοσύνη μεταξύ των Ελληνοκυπρίων, μιας και οι Τουρκοκύπριοι επέδειξαν πιο ψηλό και πιο σταθερό επίπεδο εμπιστοσύνης κατά την περίοδο αυτή. Λίγο μετά την ένταξη της Κύπρου στην ΕΕ, οι Ελληνοκύπριοι εμπιστευόταν περισσότερο τα θεσμικά της όργανα από ό,τι οι Τουρκοκύπριοι και οι πολίτες της ΕΕ συνολικά. Πρόσφατα όμως, οι Τουρκοκύπριοι τείνουν να εμπιστεύονται τα θεσμικά όργανα της ΕΕ περίπου δυο φορές περισσότερο από τους Ελληνοκύπριους. Η εμπιστοσύνη στα θεσμικά όργανα της ΕΕ μεταξύ των πολιτών της ΕΕ συνολικά παρουσίασε λιγότερες διακυμάνσεις και λιγότερη μείωση.
+<br><br>
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Avrupa Birliği Kurumları__  
+Serideki ikinci kısım küresel eğilimlerindeki memnuniyetsizliğin Kıbrıs’daki derecesini inceliyor. Araştırma Kıbrıslıların AB ve ceşitli kurumlarına (Avrupa Parlamentosu, Avrupa Komisyonu, Avrupa Merkez Bankası) güveninin 2011 den beri azaldığını gösteriyor. Ancak, bu güven kaybı Kıbrıslı Rumlardan kaynaklanıyor. Kıbrıslı Rumlara kıyasla Kıbrıslı Türkler AB ve kurumlarına istikrarlı bir şekilde daha çok güveniyor. Kıbrıs’ın AB ye katılmasından hemen sonra, Kıbrıslı Rumlar, Kıbrıslı Türkler ve diğer AB vatandaşlarına göre AB kurumlarına daha cok güveniyordu. Son yıllarda Kıbrıslı Türklerin güven eğilimleri Kıbrıslı Rumların güveninin 2 katına artarken, aynı dönemde, diğer AB vatandaşlarının kurumlara güveninde daha az dalgalanmalar ve düşüş gözlemlendi.
+
+<br>
+_The [first part](https://www.c-pot.org/post/disaffection-with-parties){target="_blank"} of this series discusses how the decline of trust in political parties in Cyprus has led to Cypriots becoming among the least trusting in the EU._
+<br><br>
+The second part of the series on trends in disaffection towards political institutions focuses on European Union institutions. If the EU is to play a constructive role in supporting peace-building in Cyprus, knowing how Cypriots feel about the EU and its institutions is vital. Eurobarometer data from 2004-2018 are used to explore trust towards the EU overall and three specific institutions: the European Commission (EC), European Parliament (EP) and European Central Bank (ECB).  
+<br>
+People do not differentiate significantly between the various EU institutions. With the exception of the EP, which the public tends to trust slightly more, the levels in trust for the other three are about the same.  
+<br>
+The most striking trend concerns the diverging trends among Turkish-Cypriots and Greek-Cypriots. Trust in EU institutions among Turkish-Cypriots was lower than Greek-Cypriots in the years following Cyprus’ entry into the EU. However, trust among Greek-Cypriots took a significant dip in 2012, coinciding with the financial crisis in the Republic of Cyprus and the haircut of banks. Naturally, trust in the ECB experienced the largest decline. From that point onwards Greek-Cypriots were less trusting than Turkish-Cypriots. This was most pronounced for the EP, where trust among Turkish-Cypriots peaked at 70% in 2017, 33% higher than Greek-Cypriots and 26% higher than the EU average. In recent years trust among Greek-Cypriots began to trend upward and the gap between the two communities has decreased.
+
+<br>
+`r subplot_trust_eu_inst_cyp`  
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<br><br>
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_    <br><br><br>
+Similarly, prior to 2012 Cypriots had higher levels of trust in EU institutions than the average EU citizen, typically around 8-10% higher. Cypriots’ trust began dipping below the overall EU levels after the financial crisis, mostly driven by the decline among Greek-Cypriots. By 2018, levels were analogous to EU averages. During this period, trust in EU institutions among Europeans as a whole experienced fewer fluctuations and lower decline. 
+
+<br>
+`r subplot_trust_eu_inst_eu`  
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<br><br>
+
+Taken together, these two blog posts on political disaffection show that while Cypriots are generally distrustful of political processes, they tend to trust EU processes more than their own. Notably, Turkish-Cypriots are significantly more trusting of political processes than Greek-Cypriots. Even though trust has declined in both communities, the level of decline for Turkish-Cypriots has not been as severe. These trends are not unique to Cyprus of course, as political disaffection is widespread in western democracies and has been declining since the 1960s and 70s (Norris, 2011). Nevertheless, Cypriots tend to be among the least trusting in Europe, indicating the severity to which they feel that there is a political and institutional failure to meaningfully engage with them and solve the issues they face.  
+<br><br>
+__Data sources__  
+Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  
+
+<br>
+__References__  
+Norris, P. (2011). _Democratic Deficit: Critical Citizens Revisited_. New York: Cambridge University Press.<br>
+
+
+<!--chapter:end:disaffection-with-eu-institutions.Rmd-->
+
+---
+title: 'How Disaffected are Cypriots with Political Institutions? : Political Parties'
+author: 'Yioryos Nardis'
+date: '2019-08-27'
+slug: disaffection-with-parties
+categories: []
+tags:
+  - politics
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(survey)
+library(dplyr)
+library(stats)
+library(knitr)
+library(Hmisc)
+library(webshot)
+library(processx)
+library(car)
+library(tidyr)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+#Access Eurobarometer data files from websites of EU Open Data Portal, ICPSR, or GESIS
+load("EB2004.62.rdata")
+load("EB2005.63.4.rdata")
+load("EB2006.65.2.rdata")
+load("EB2007.68.1.rdata")
+load("EB2008.70.1.rdata")
+load("EB2009.71.3.rdata")
+load("EB2010.74.2.rdata")
+load("EB2011.76.3.rdata")
+load("EB2012.77.3.rdata")
+load("EB2013.79.3.rdata")
+load("EB2014.81.4.rdata")
+load("EB2015.84.3.rdata")
+load("EB2016.85.2.rdata")
+load("EB2017.87.3.rdata")
+load("EB2018.89.1.rdata")
+
+
+#Access World Values Survey data files from websites of ICPSR or WVS
+load("WVS2006.rdata")
+load("EVS2008.rdata")
+load("WVS2011.rdata")
+
+
+#####Recoding country groupings to pass into survey estimate function#####  
+#Inconsistent variable structures across dataframes require use of two packages: 'car' and 'dplyr'
+EB2004.62$V6 <- car::recode(EB2004.62$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2005.63.4$V6 <- car::recode(EB2005.63.4$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2006.65.2$V6 <- car::recode(EB2006.65.2$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2007.68.1$V6 <- car::recode(EB2007.68.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2008.70.1$V6 <- car::recode(EB2008.70.1$V6,"19 = 'GCC'; 33 = 'TCC'")
+EB2009.71.3$COUNTRY <- car::recode(EB2009.71.3$COUNTRY,"18 = 'GCC'; 32 = 'TCC'")
+EB2010.74.2$V6 <- car::recode(EB2010.74.2$V6,"'(19) Cyprus (Republic)' = 'GCC'; '(33) Cyprus (CY-TCC)' = 'TCC'")
+EB2011.76.3$COUNTRY <- dplyr::recode(EB2011.76.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2012.77.3$COUNTRY <- dplyr::recode(EB2012.77.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2013.79.3$COUNTRY <- dplyr::recode(EB2013.79.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2014.81.4$COUNTRY <- dplyr::recode(EB2014.81.4$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2015.84.3$COUNTRY <- dplyr::recode(EB2015.84.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2016.85.2$COUNTRY <- dplyr::recode(EB2016.85.2$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2017.87.3$COUNTRY <- dplyr::recode(EB2017.87.3$COUNTRY, "(19) CY - Cyprus (Republic)" = "GCC", "(33) CY-TCC - Cyprus TCC" = "TCC")
+EB2018.89.1$country <- car::recode(EB2018.89.1$country,"19 = 'GCC'; 33 = 'TCC'")
+EB2018.89.1$country <- as.factor(EB2018.89.1$country)
+
+EB2010.74.2$V25 <- dplyr::recode(EB2010.74.2$V25, "(1) EU15" = "1")
+EB2011.76.3$VEU15 <- dplyr::recode(EB2011.76.3$VEU15, "(1) EU 15" = "1")
+EB2012.77.3$VEU15 <- dplyr::recode(EB2012.77.3$VEU15, "(1) EU 15" = "1")
+EB2013.79.3$EU15 <- dplyr::recode(EB2013.79.3$EU15, "(1) EU-15" = "1")
+EB2014.81.4$EU15 <- dplyr::recode(EB2014.81.4$EU15 , "(1) EU15" = "1")
+EB2015.84.3$EU15 <- dplyr::recode(EB2015.84.3$EU15, "(1) EU15" = "1")
+EB2016.85.2$EU15 <- dplyr::recode(EB2016.85.2$EU15, "(1) EU15" = "1")
+EB2017.87.3$EU15 <- dplyr::recode(EB2017.87.3$EU15, "(1) EU15" = "1")
+EB2018.89.1$eu15 <- car::recode(EB2018.89.1$eu15, "'EU15' = '1'")
+EB2018.89.1$eu15 <- as.factor(EB2018.89.1$eu15)
+
+EB2010.74.2$V29 <- dplyr::recode(EB2010.74.2$V25, "(1) EU25" = "1")
+EB2011.76.3$VEU25 <- dplyr::recode(EB2011.76.3$VEU25, "(1) EU 25" = "1")
+EB2012.77.3$VEU25 <- dplyr::recode(EB2012.77.3$VEU25, "(1) EU 25" = "1")
+EB2013.79.3$EU25 <- dplyr::recode(EB2013.79.3$EU25, "(1) EU-25" = "1")
+EB2014.81.4$EU25 <- dplyr::recode(EB2014.81.4$EU25 , "(1) EU25" = "1")
+EB2015.84.3$EU25 <- dplyr::recode(EB2015.84.3$EU25, "(1) EU25" = "1")
+EB2016.85.2$EU25 <- dplyr::recode(EB2016.85.2$EU25, "(1) EU25" = "1")
+EB2017.87.3$EU25 <- dplyr::recode(EB2017.87.3$EU25, "(1) EU25" = "1")
+EB2018.89.1$eu25 <- car::recode(EB2018.89.1$eu25, "'EU15' = '1'")
+EB2018.89.1$eu25  <- as.factor(EB2018.89.1$eu25 )
+
+#save(EB2004.62, file=("EB2004.62.rdata"))
+#save(EB2005.63.4, file=("EB2005.63.4.rdata"))
+#save(EB2005.64.2, file=("EB2005.64.2.rdata"))
+#save(EB2006.65.2, file=("EB2006.65.2.rdata"))
+#save(EB2007.68.1, file=("EB2007.68.1.rdata"))
+#save(EB2008.70.1, file=("EB2008.70.1.rdata"))
+#save(EB2009.71.3, file=("EB2009.71.3.rdata"))
+#save(EB2010.74.2, file=("EB2010.74.2.rdata"))
+#save(EB2011.76.3, file=("EB2011.76.3.rdata"))
+#save(EB2012.77.3, file=("EB2012.77.3.rdata"))
+#save(EB2013.79.3, file=("EB2013.79.3.rdata"))
+#save(EB2014.81.4, file=("EB2014.81.4.rdata"))
+#save(EB2015.84.3, file=("EB2015.84.3.rdata"))
+#save(EB2016.85.2, file=("EB2016.85.2.rdata"))
+#save(EB2017.87.3, file=("EB2017.87.3.rdata"))
+#save(EB2018.89.1, file=("EB2018.89.1.rdata"))
+
+######Lists with data, weights, groups, & variables to pass into survey estimate function
+
+#Trust in political parties
+#Cyprus
+pp1 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V91_fac")
+pp2 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V91_fac")
+pp3 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V88_fac")
+pp4 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V149_fac")
+pp5 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V226_fac")
+pp6 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="QA9_2_fac")
+pp7 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="~V299_fac")
+pp8 <- list(passedData = EB2011.76.3, passedWeights="W1", group="COUNTRY", estimate="QA10_5_fac")
+pp9 <- list(passedData = EB2012.77.3, passedWeights="W1", group="COUNTRY", estimate="QA13_1_fac")
+pp10 <- list(passedData = EB2013.79.3, passedWeights="W1", group="COUNTRY", estimate="QA12_1_fac")
+pp11 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="QA9_1_fac")
+pp12 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_6_fac") #GCC
+pp13 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8A_5_fac") #GCC
+pp14 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8A_5_fac") #GCC
+pp15 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_6_fac") #TCC
+pp16 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="QA8B_5_fac") #TCC
+pp17 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="QA8B_5_fac") #TCC
+
+
+#EU-15
+pp18 <- list(passedData = EB2004.62, passedWeights="V26", group="V25", estimate="V91_fac")
+pp19 <- list(passedData = EB2005.63.4, passedWeights="V26", group="V25", estimate="V91_fac")
+pp20 <- list(passedData = EB2006.65.2, passedWeights="V26", group="V25", estimate="V88_fac")
+pp21 <- list(passedData = EB2007.68.1, passedWeights="V26", group="V25", estimate="V149_fac")
+pp22 <- list(passedData = EB2008.70.1, passedWeights="V26", group="V25", estimate="V226_fac")
+pp23 <- list(passedData = EB2009.71.3, passedWeights="W11", group="VEU15", estimate="QA9_2_fac")
+pp24 <- list(passedData = EB2010.74.2, passedWeights="V26", group="V25", estimate="V299_fac")
+pp25 <- list(passedData = EB2011.76.3, passedWeights="W11", group="VEU15", estimate="QA10_5_fac")
+pp26 <- list(passedData = EB2012.77.3, passedWeights="W11", group="VEU15", estimate="QA12_1_fac")
+pp27 <- list(passedData = EB2013.79.3, passedWeights="W11", group="EU15", estimate="QA12_1_fac")
+pp28 <- list(passedData = EB2014.81.4, passedWeights="W11", group="EU15", estimate="QA9_1_fac")
+pp29 <- list(passedData = EB2015.84.3, passedWeights="W11", group="EU15", estimate="QA8A_6_fac")
+pp30 <- list(passedData = EB2016.85.2, passedWeights="W11", group="EU15", estimate="QA8A_5_fac")
+pp31 <- list(passedData = EB2017.87.3, passedWeights="W11", group="EU15", estimate="QA8A_5_fac")
+
+
+#EU-25
+pp32 <- list(passedData = EB2004.62, passedWeights="V32", group="V31", estimate="V95_fac")
+pp33 <- list(passedData = EB2005.63.4, passedWeights="V32", group="V31", estimate="V81_fac")
+pp34 <- list(passedData = EB2006.65.2, passedWeights="V32", group="V31", estimate="V91_fac")
+pp35 <- list(passedData = EB2007.68.1, passedWeights="V32", group="V31", estimate="V152_fac")
+pp36 <- list(passedData = EB2008.70.1, passedWeights="V32", group="V31", estimate="V230_fac")
+pp37 <- list(passedData = EB2009.71.3, passedWeights="W14", group="VEU25", estimate="QA9_5_fac")
+pp38 <- list(passedData = EB2010.74.2, passedWeights="V30", group="V29", estimate="V302_fac")
+pp39 <- list(passedData = EB2011.76.3, passedWeights="W14", group="VEU25", estimate="QA10_8_fac")
+pp40 <- list(passedData = EB2012.77.3, passedWeights="W14", group="VEU25", estimate="QA13_4_fac")
+pp41 <- list(passedData = EB2013.79.3, passedWeights="W14", group="EU25", estimate="QA12_4_fac")
+pp42 <- list(passedData = EB2014.81.4, passedWeights="W14", group="EU25", estimate="QA9_4_fac")
+pp43 <- list(passedData = EB2015.84.3, passedWeights="W14", group="EU25", estimate="QA8A_10_fac")
+pp44 <- list(passedData = EB2016.85.2, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+pp45 <- list(passedData = EB2017.87.3, passedWeights="W14", group="EU25", estimate="QA8A_9_fac")
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Fuction calling 'Func' and calcuating weighted survey estimates for a given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#####Calculating Trust in Political Parties
+dataInfo <- list(pp1, pp2, pp3, pp4, pp5, pp6, pp7, pp8, pp9, pp10, pp11, pp12, pp13, pp14) #GCC
+trust_pp <- applyFunc("trust_pp_gcc", "GCC", dataInfo)
+
+dataInfo <- list(pp1, pp2, pp3, pp4, pp5, pp6, pp7, pp8, pp9, pp10, pp11, pp15, pp16, pp17) #TCC
+results <- applyFunc("trust_pp_tcc", "TCC", dataInfo)
+trust_pp <- cbind(trust_pp, results)
+
+
+#Trust in EU Institutions among EU-15
+dataInfo <- list(pp18, pp19, pp20, pp21, pp22, pp23, pp24, pp25, pp26, pp27, pp28, pp29, pp30, pp31) 
+results <- applyFunc("trust_pp_eu15", "1", dataInfo)
+trust_pp <- cbind(trust_pp, results)
+
+
+#Trust in EU Institutions among EU-25
+dataInfo <- list(pp32, pp33, pp34, pp35, pp36, pp37, pp38, pp39, pp40, pp41, pp42, pp43, pp44, pp45)
+results <- applyFunc("trust_pp_eu25", "1", dataInfo)
+trust_pp <- cbind(trust_pp, results)
+
+trust_pp$year <- c(2004:2017)
+
+
+
+#####Function to convert to percentages
+mult_one <- function(var1)
+{
+  var1*100 
+}
+
+trust_pp[, -17] <- lapply(trust_pp[, -17], mult_one)
+trust_pp <- round(trust_pp, 1)
+
+
+#####Reshaping from wide to long
+trust_pp <- to_long(trust_pp, "group", c("trust_pp"), 
+                    c("trust_pp_gcc", "trust_pp_tcc", "trust_pp_eu15", "trust_pp_eu25"))
+
+trust_pp$group <- dplyr::recode(trust_pp$group, "trust_pp_gcc" = "Greek-Cypriots", "trust_pp_tcc" = "Turkish-Cypriots", "trust_pp_eu15" = "EU-15", "trust_pp_eu25" = "EU-25")
+trust_pp
+
+
+
+#Calculating combined Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+trust_pp$weight <- c(552213/709314, 552213/709314, 552213/709314, 596752/753853, 638900/782126, 638900/782126, 651400/794626, 660400/803626, 651400/794626, 660400/803626, 724084/867310, 724084/867310, 724084/867310, 741308/884534, 
+                     157101/709314, 157101/709314, 157101/709314, 157101/753853, 143226/782126, 143226/782126, 143226/794626, 143226/803626, 143226/794626, 143226/803626, 143226/867310, 143226/867310, 143226/867310, 143226/884534,
+                     rep(NA, 28))
+
+trust_pp <- trust_pp %>% mutate(trust_pp_w = trust_pp * weight)
+
+
+trust_pp_cyp <- trust_pp %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+trust_pp_cyp <- trust_pp_cyp %>% select(-"trust_pp", -"weight")
+
+trust_pp_cyp <- trust_pp_cyp %>% 
+  group_by(year) %>% 
+  summarise(trust_pp = sum(trust_eu_w))
+
+trust_pp_cyp$group <- c("Cypriots")
+trust_pp_cyp$weight <- c(NA)
+trust_pp$trust_pp_w <- NULL
+
+
+trust_pp <- rbind(trust_pp, trust_pp_cyp)
+trust_pp <- trust_pp %>% mutate_at(vars(-year, -group, -weight), funs(round(., 1)))
+trust_pp$group <- as.factor(trust_pp$group)
+rm(trust_pp_cyp)
+
+save(trust_pp, file=("trust_pp.rdata"))
+
+
+
+#####Party membership in Cyprus
+WVS2006$V28_fac <- WVS2006$V28
+WVS2006$V28_fac <- dplyr::recode(WVS2006$V28_fac, '-1' = '3', '-2' = '3', '-3' = '3', '-4' = '3', '-5' = '3', '0' = '3', '1' = '3', '3' = '3', '4' = '3', '2' = '1')
+WVS2006$V28_fac <- dplyr::recode(WVS2006$V28_fac, '3' = '2')
+WVS2006$V28_fac <- as.factor(WVS2006$V28_fac)
+levels(WVS2006$V28_fac)[2] <- "Other"
+levels(WVS2006$V28_fac)[1] <- "Active member"
+table(WVS2006$V28_fac)
+
+WVS2011$V29_fac <- WVS2011$V29
+WVS2011$V29_fac <- dplyr::recode(WVS2011$V29_fac, '-1' = '3', '-2' = '3', '-3' = '3', '-4' = '3', '-5' = '3', '0' = '3', '1' = '3', '3' = '3', '4' = '3', '2' = '1')
+WVS2011$V29_fac <- dplyr::recode(WVS2011$V29_fac, '3' = '2')
+WVS2011$V29_fac <- as.factor(WVS2011$V29_fac)
+levels(WVS2011$V29_fac)[2] <- "Other"
+levels(WVS2011$V29_fac)[1] <- "Active member"
+table(WVS2011$V29_fac)
+
+WVS2006$CYP <- NA
+WVS2006[12651:13150, 'CYP'] <- 'TCC' #Cases 1-500 are Turkish-Cypriot respondents (12651 - 13150)
+WVS2006[13151:13700, 'CYP'] <- 'GCC' #cases 501-1050 are Greek-Cypriot respondents (13151 - 13700)
+WVS2006$CYP <- as.factor(WVS2006$CYP)
+
+EVS2008$c_abrv <- dplyr::recode(EVS2008$c_abrv, "CY" = "GCC", "CY-TCC" = "TCC")
+EVS2008$c_abrv <- as.factor(EVS2008$c_abrv)
+
+WVS2011$CYP <- NA
+WVS2011[11543:12402, 'CYP'] <- 'GCC' #Cases 1-500 are in Greek (11543 - 12402)
+WVS2011[12043:12542, 'CYP'] <- 'TCC' #cases 501-1000 are in Turkish (12043 - 12542)
+WVS2011$CYP <- as.factor(WVS2011$CYP)
+
+#Adding WVS/EVS complex survey design & calculating % population with membership in political parties#####
+pm1 <- list(passedData = WVS2006, passedWeights="V259", group="V2", estimate="V28_fac") #Cypriots 2006
+pm2 <- list(passedData = EVS2008, passedWeights="weight_g", group="c_abrv", estimate="v14_fac") #GCC & TCC 2008
+pm3 <- list(passedData = WVS2011, passedWeights="V258", group="V2", estimate="V29_fac") #Cypriots 2011
+pm4 <- list(passedData = WVS2006, passedWeights="V259", group="CYP", estimate="V28_fac") #GCC & TCC 2006
+pm5 <- list(passedData = WVS2011, passedWeights="V258", group="CYP", estimate="V29_fac") #GCC & TCC 2011
+
+dataInfo <- list(pm1, pm3) 
+pm <- applyFunc("pm_cyp", "196", dataInfo)
+
+pm[nrow(pm)+1,] <- NA
+pm$year <- c(2006, 2011, 2008)
+
+dataInfo <- list(pm4, pm5, pm2) 
+results <- applyFunc("pm_tcc", "TCC", dataInfo)
+pm <- cbind(pm, results)
+results <- applyFunc("pm_gcc", "GCC", dataInfo)
+pm <- cbind(pm, results)
+
+
+#Calculating combined Cypriot percentages for 2008 using population information from WVS technical report 
+pm <- transform(pm, pm_cyp = case_when(
+  year == 2008 ~ (pm_gcc*(605024 / (194750 + 605024)) + pm_tcc * (194750 / (194750 + 605024))), 
+  TRUE   ~ pm_cyp
+))
+
+pm[, names(pm) != "year"] <- lapply(pm[, names(pm) != "year"], mult_one)
+
+#Reshaping from wide to long
+pm <- pm %>% 
+  gather(group, pm, pm_gcc, pm_tcc, pm_cyp)
+
+pm$group <- dplyr::recode(pm$group, "pm_gcc" = "Greek-Cypriots", "pm_tcc" = "Turkish-Cypriots", "pm_cyp" = "Cypriots")
+pm <- pm[order(pm$group), ] 
+
+save(pm, file=("pm.rdata"))
+```
+
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/pm.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_pp.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/trust_pp_age.rdata")
+
+
+#####Plots
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5)
+
+#Annotation attributes
+anot_trust_pp_cyp <- list(
+  text = "Trust in Political Parties",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_pp_gcc <- list(
+  text = "Trust in Political Parties Among Greek-Cypriots",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_trust_pp_tcc <- list(
+  text = "Trust in Political Parties Among Turkish-Cypriots",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+anot_pm_cyp <- list(
+  text = "Political Party Membership",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .9,
+  showarrow = FALSE
+)
+
+anot_url_1 <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.31,
+  y = 0.1,
+  showarrow = FALSE
+)
+
+anot_url_2 <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.28,
+  y = 0.1,
+  showarrow = FALSE
+)
+
+anot_url_3 <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.34,
+  y = 0.1,
+  showarrow = FALSE
+)
+
+anot_url_4 <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.25,
+  y = 0.1,
+  showarrow = FALSE
+)
+
+#Colours
+#Cypriots;9702A7
+#Turkish-Cypriots; FFCF00
+#Greek-Cypriots; 00A876
+#EU-15; FF7800
+#EU-25; 009999
+
+
+#Trust in Political Parties: Cypriots
+trust_pp_cyp <- trust_pp %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cypriots")
+
+plot_trust_pp_cyp <- plot_ly(trust_pp_cyp, y = ~trust_pp, x= ~year, color = ~group, type = "scatter",
+                             mode = "lines+markers",
+                             line = list(color = factor(trust_pp_cyp$group, labels = c("FFCF00","9702A7","00A876")), width = 3), 
+                             marker = list(color = factor(trust_pp_cyp$group, labels = c("FFCF00","9702A7","00A876")), size = 6),
+                             legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
+         legend = l,
+         annotations = anot_trust_pp_cyp) %>% 
+  layout(annotations = anot_url_1)
+
+
+#Trust in Political Parties: EU-15 & EU-25
+trust_pp_eu <- trust_pp %>% filter(group == "Cypriots" | group == "EU-15" | group == "EU-25")
+
+plot_trust_pp_eu <- plot_ly(trust_pp_eu, y = ~trust_pp, x= ~year, color = ~group, type = "scatter",
+                            mode = "lines+markers",
+                            line = list(color = factor(trust_pp_eu$group, labels = c("#009999","#9702A7","#FF7800")), width = 3), 
+                            marker = list(color = factor(trust_pp_eu$group, labels = c("#009999","#9702A7","#FF7800")), size = 6),
+                            legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
+         legend = l,
+         annotations = list(anot_trust_pp_cyp, anot_url_4))
+
+
+#Trust in Political Parties: Cypriots, by age
+pal <- c("#4477aa","#228833","#ee6677","#bbbbbb")
+
+trust_pp_age_gcc <- trust_pp_age %>% filter(group == "Greek-Cypriots")
+plot_pp_age_gcc <- plot_ly(trust_pp_age_gcc, y = ~trust_pp, x= ~year, 
+                           color = ~age, colors = pal, 
+                           type = "scatter",
+                           mode = "lines+markers", 
+                           line = list(width = 3), 
+                           marker = list(size = 5),
+                           legendgroup = ~age, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
+         legend = l,
+         annotations = list(anot_trust_pp_gcc)) %>% 
+           layout(annotations = anot_url_2)
+
+
+trust_pp_age_tcc <- trust_pp_age %>% filter(group == "Turkish-Cypriots")
+plot_pp_age_tcc <- plot_ly(trust_pp_age_tcc, y = ~trust_pp, x= ~year, 
+                           color = ~age, colors = pal,
+                           type = "scatter",
+                           mode = "lines+markers", 
+                           line = list(width = 3), 
+                           marker = list(size = 5),
+                           legendgroup = ~age, showlegend = T) %>% 
+  layout(yaxis = list(title = "%  'Tend to Trust'", titlefont=list(size=20), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16)),
+         legend = l,
+         annotations = list(anot_trust_pp_tcc)) %>% 
+           layout(annotations = anot_url_2)
+
+
+
+#Political Party Membership: Cypriots
+plot_pm_cyp <- plot_ly(pm, y = ~pm, x= ~year, color = ~group, type = "scatter",
+                       mode = "lines+markers",
+                       line = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), width = 3), 
+                       marker = list(color = factor(pm$group, labels = c("9702A7","00A876","FFCF00")), size = 6),
+                       legendgroup = ~group, showlegend = T) %>% 
+  layout(yaxis = list(title = "% Membership in Political Parties", titlefont=list(size=20), range = c(0,25), tickfont = list(size = 16)),
+         xaxis = list(title = "", tickvals = list(2006, 2008, 2011), tickfont = list(size = 16)),
+         legend = l,
+         annotations = list(anot_pm_cyp)) %>% 
+           layout(annotations = anot_url_3)
+```
+
+<br>
+
+>This two part series examines the extent to which global trends in disaffection towards political institutions also manifest themselves in Cyprus and how it compares to other EU countries. Trust towards political parties is examined in this first part of the series. The analysis finds that trust in parties has been declining over the past 15 years, particularly from 2014 onwards. In contrast, the EU as a whole experienced relative stability during this period. Turkish-Cypriots tend to be 2-3 times more trusting of political parties than Greek-Cypriots and slightly more likely to be members of one. The second part of the series will examine trust towards EU institutions.
+<br><br>
+__Πόσο Δυσαρεστημένοι είναι οι Κύπριοι με τους Πολιτικούς Θεσμούς; Πολιτικά Κόμματα__<br>
+Αυτή η σειρά αποτελείται από δύο μέρη και εξετάζει τον βαθμό στον οποίο οι παγκόσμιες τάσεις γύρω από την δυσαρέσκεια έναντι στους πολιτικούς θεσμούς εκδηλώνονται στην Κύπρο και πώς συγκρίνεται με άλλες χώρες της ΕΕ. Η εμπιστοσύνη προς τα πολιτικά κόμματα εξετάζεται σε αυτό το πρώτο μέρος της σειράς. Η ανάλυση διαπιστώνει ότι η εμπιστοσύνη προς τα κόμματα μειώνεται τα τελευταία 15 χρόνια, ιδιαίτερα από το 2014 και μετά. Αντιθέτως, η ΕΕ συνολικά αντιμετωπίσε σχετική σταθερότητα κατά την περίοδο αυτή. Οι Τουρκοκύπριοι τείνουν να εμπιστεύονται τα πολιτικά κομμάτα σε ποσοστά 2-3 φορές πιο ψηλά από τους Ελληνοκύπριους και είναι λίγο πιο πιθανό να είναι μέλη ενός κόμματος. Το δεύτερο μέρος θα εξετάσει την εμπιστοσύνη προς τα θεσμικά όργανα της Ε.Ε.
+<br><br>
+__Kıbrıslılar Siyasi Kurumlardan Ne Kadar Memnuniyetsizler?: Siyasi Partiler__<br>
+Bu iki bolümlük seride global politik güven trendleri Kıbrıs’ta ve diğer Avrupa ülkeleri bağlamında ele alınmaktadır. İlk bölümde, politik partilere olan güven incelenmektedir. Ikinci bölümde, hükümet ve parlemantolara olan güven ele alınacaktır. Analizlere göre, Kıbrıs’ta politik güven son 15 yıldır azalmaktadır,özellikle 2004’ten beri. Buna karşın, aynı süre içerisinde Avrupa genelinin ortalamasında güven indeksinde bir azalma veya artma olmamıştır. Politik partilere Kıbrıslı Turkler, Kıbrıslı Rumlara gore 2-3 kat daha fazla güvenmektedir; ve aynı zamanda bir partiye üye olma olasılıkları Kıbrıslı Rumlara gore biraz daha yüksektir. Ikinci bölümde, Avrupa Birliği Kurumlarına olan güven ele alınacaktır.
+
+<br>
+Political disaffection,i.e., unfavourable attitudes and behaviours towards political processes and institutions, has consequences for public involvement in political life. When the public turns away from the processes we have developed to organise society, then solving common issues becomes more difficult. This is relevant to Cyprus where people's invovlement in the design of institutions for a future unified state is minimal.  
+<br> 
+Distrust in parties is one such expression of political disaffection that has problematic implications, as parties have traditionally been the ways in which participation is organized. Political parties encourage us to vote, tell us who to vote for, and which policies to support. Beginning in the 1960’s, trust in politics and government began declining in most democracies where long-term data is available. Distrust in political parties is now prevalent in European countries (Norris, 2011), as are reductions in official party membership (van Biezen, Mair, & Poguntke, 2012).  
+<br>
+How do these global trends manifest themselves in Cyprus? To examine Cypriots’ disaffection with political parties the analysis uses data from the Eurobarometer and World Values Survey/European Values Study, international research projects that regularly conduct representative surveys in Cyprus among Greek-Cypriots and Turkish-Cypriots.  
+<br>
+Trust in political parties among Cypriots, while already low, declined considerably. During this time it fell over 16% from around 25% in 2004 to 11% in 2018. Turkish-Cypriots tend to be more trusting of political parties than Greek-Cypriots for nearly all years during this time frame. Trust among Greek-Cypriots eroded at a steeper rate of almost 20%, from around 29% in 2008 to 10% in 2019. However, the decline in trust among Turkish-Cypriots began in 2014 as until that time it experienced a period of trendless fluctuation, after which it fell markedly.
+
+<br>
+`r plot_trust_pp_cyp`
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_
+<br>
+
+Exploring generational differences reveals that today the differences across age are small and similar for both communities. However, for Greek-Cypriots, even though trust in parties has fallen for all age groups, the largest declines are for older persons. In particular those aged 55 and older who typically were the most trusting of political parties. Where differences between younger and older persons were around 20% during the 2000s, by 2017 they fell to within 5%. Conversely, generational differences were less pronounced for Turkish-Cypriots over this time period. Again, trust is typically higher for older persons.
+<br>
+`r plot_pp_age_gcc`
+<br><br>
+`r plot_pp_age_tcc`
+<br><br>
+How does this trend compare to the rest of the EU? The level of trust in parties throughout the EU was stable during this period. While from 2004 to 2010 Cypriots tended to be more trusting of parties than the average European, from 2011 onwards trust began dipping below the overall EU levels. By 2017 the average Cypriot was 12% less trusting of parties than the average European.
+
+<br>
+`r plot_trust_pp_eu`
+<br>
+
+Behavioral indicators of engagement with political parties reflect similar findings, as party membership in Cyprus is also very low. Around 7-8% of Cyrpiots claim party membership. As with trust, membership in parties is slightly higher among Turkish-Cypriots, on average around 3% higher.
+<br><br>
+
+`r plot_pm_cyp`
+<br>
+
+Political parties in Cyprus have clearly let people down, as Cypriots are considerably less trusting of political parties than the average European and a large portion perceives them with almost complete disinterest. Moreover, younger Cypriots are typically the least trusting and this signifies troubling long-term implications for political processes. The difference between age groups in recent times may be small, and smaller than in the past, but nonetheless, for young people the beginning of their political life is synonymous with distrust.
+<br>
+
+Greek-Cypriots are significantly less trusting of parties and less likely to be members of one than Turkish-Cypriots. The extremely low trust among Greek-Cypriots indicates the severity of parties’ failure to meaningfully engage with them. These failings can be seen from parties’ dismal abilities in grassroots organizing during recent elections. Turnout at the Republic of Cyprus 2018 presidential elections and 2016 parliamentary elections was the lowest ever recorded, at 72% and 67% respectively. Disengagement is again considerably pronounced for the youth as a mere 25% of newly eligible voters (i.e. eighteen- and nineteen-year-olds) actually registered to vote in the 2018 Republic of Cyprus presidential elections (Phileleftheros, 2017). These findings clearly challenge the traditional way of thinking about political parties as meaningful means of connecting the public to their institutions in Cyprus. 
+<br><br>
+
+__Data sources__  
+_Trust in parties_  
+Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 76.3, 77.3, 79.3, 81.4, 84.3, 85.2, 87.3, 89.1  
+<br>
+_Party membership_  
+World Values Survey/European Values Study: WVS 5, EVS 4, WVS6  
+
+<br>
+__References__  
+Norris, P. (2011). _Democratic Deficit: Critical Citizens Revisited_. New York: Cambridge University Press.<br>
+_Phileleftheros._ (2017). [Available here.](http://www.philenews.com/eidiseis/politiki/article/467206/molis-10-500-neoi-psifoforoi-engrafikan-ston-katalog){target="_blank"}<br>
+van Biezen I. , Mair, P., & Poguntke, T. (2012). Going, going,…gone? The decline of party membership in contemporary Europe. _European Journal of Political Research_, 51, 24-56.  
+<br>
+
+<!--chapter:end:disaffection-with-parties.Rmd-->
+
+---
+title: 'Ideological Identification in Cyprus'
+author: 'Yioryos Nardis'
+date: '2019-12-16'
+slug: ideological-identification
+categories: []
+tags:
+  - politics
+subtitle: ''
+description: ''
+image: ''
+---
+
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access Eurobarometer data files from websites of EU Open Data Portal, ICPSR, or GESIS
+load("EB2004.62.rdata")
+load("EB2005.63.4.rdata")
+load("EB2006.65.2.rdata")
+load("EB2007.68.1.rdata")
+load("EB2008.70.1.rdata")
+load("EB2009.71.3.rdata")
+load("EB2010.74.2.rdata")
+load("EB2011.75.3.rdata")
+load("EB2014.81.4.rdata")
+load("EB2015.84.3.rdata")
+load("EB2016.85.2.rdata")
+load("EB2017.87.3.rdata")
+load("EB2018.90.3.rdata")
+
+#####Recoding variables for 2018 dataframe#####  
+#Country variables
+EB2018.90.3$country1 <- car::recode(EB2018.90.3$country, as.factor = T, "'1' = 'France'; '2' = 'Belgium'; '3' = 'Netherlands';
+'5' = 'Italy'; '6' = 'Luxembourg'; '7' = 'Denmark'; '8' = 'Ireland'; '9' = 'UK';
+'11' = 'Greece'; '12' = 'Spain'; '13' = 'Portugal'; '16' = 'Finland'; '17' = 'Sweden';
+'18' = 'Austria'; '20' = 'Czech Republic'; '21' = 'Estonia'; '22' = 'Hungary';
+'23' = 'Latvia'; '24' = 'Lithuania'; '25' = 'Malta'; '26' = 'Poland'; '27' = 'Slovakia'; 
+'28' = 'Slovenia'; '29' = 'Bulgaria'; '30' = 'Romania'; else = NA")
+
+EB2018.90.3$germany <- car::recode(EB2018.90.3$country, as.factor = T, "'4' = 'W Germany'; '14' = 'E Germany'; else = NA") 
+EB2018.90.3$germany <- car::recode(EB2018.90.3$germany, as.factor = T, "'W Germany' = 'Germany'; 'E Germany' = 'Germany'; else = NA") 
+EB2018.90.3$cyprus <- car::recode(EB2018.90.3$country, as.factor = T, "'19' = 'Greek-Cypriots'; '33' = 'Turkish-Cypriots'; else = NA")
+
+EB2018.90.3$country2 <- car::recode(EB2018.90.3$country, as.factor = T, "'1' = 'France'; '2' = 'Belgium'; '3' = 'Netherlands';
+'5' = 'Italy'; '6' = 'Luxembourg'; '7' = 'Denmark'; '8' = 'Ireland'; '9' = 'UK';
+'11' = 'Greece'; '12' = 'Spain'; '13' = 'Portugal'; '16' = 'Finland'; '17' = 'Sweden';
+'18' = 'Austria'; '19' = 'GCC'; '20' = 'Czech Republic'; '21' = 'Estonia'; '22' = 'Hungary';
+'23' = 'Latvia'; '24' = 'Lithuania'; '25' = 'Malta'; '26' = 'Poland'; '27' = 'Slovakia'; 
+'28' = 'Slovenia'; '29' = 'Bulgaria'; '30' = 'Romania'; '33' = 'TCC'")
+
+#EU-28 indicator variable
+table(EB2018.90.3$eu28)
+EB2018.90.3$eu28 <- as.factor(EB2018.90.3$eu28)
+str(EB2018.90.3$eu28)
+
+#10-point left-right ideology variable
+describe(EB2018.90.3$d1)
+EB2018.90.3$d1_rec <- as.numeric(EB2018.90.3$d1)
+EB2018.90.3$d1_rec[EB2018.90.3$d1_rec > 10] <- NA
+str(EB2018.90.3$d1_rec)
+describe(EB2018.90.3$d1_rec)
+
+#Gender
+#Male=1; Female=2
+describe(EB2018.90.3$d10)
+EB2018.90.3$d10_fac <- as.factor(EB2018.90.3$d10)
+EB2018.90.3$d10_fac <-
+  recode_factor(EB2018.90.3$d10_fac, '1' = "Male", '2' = "Female")
+describe(EB2018.90.3$d10_fac)
+str(EB2018.90.3$d10_fac)
+
+save(EB2018.90.3, file=("EB2018.90.3.rdata"))
+
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#First function calling 'Func'. Calcuates weighted survey estimates for one factor level of given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#Second function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc2  <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:4) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Function to convert to percentages
+mult_one <- function(var1)
+{
+  round((var1*100), 1) 
+}
+
+
+
+######Analysis 1: Cyprus vs EU in 2018
+#Lists with data, weights, groups and variables to pass into survey estimate function
+
+id1 <- list(passedData = EB2018.90.3, passedWeights="w1", group="cyprus", estimate="d1_rec") #Cyprus
+id2 <- list(passedData = EB2018.90.3, passedWeights="w3", group="germany", estimate="d1_rec") #Germany
+id3 <- list(passedData = EB2018.90.3, passedWeights="w23", group="eu28", estimate="d1_rec") #EU-28
+
+
+#Calculating Left-Right Ideology mean
+dataInfo <- list(id1)
+ideology <- applyFunc("ideology_gcc", "Greek-Cypriots", dataInfo) #GCC
+
+dataInfo <- list(id1)
+results <- applyFunc("ideology_tcc", "Turkish-Cypriots", dataInfo) #TCC
+ideology <- cbind(ideology, results)
+
+dataInfo <- list(id2)
+results <- applyFunc("ideology_ger", "Germany", dataInfo) #Germany
+ideology <- cbind(ideology, results)
+
+dataInfo <- list(id3)
+results <- applyFunc("ideology_eu28", "1", dataInfo) #EU-28
+ideology <- cbind(ideology, results)
+
+
+#Reshaping from wide to long
+ideology <- ideology %>% gather(group, ideology, ideology_gcc:ideology_eu28)
+
+ideology$group <- dplyr::recode(ideology$group, "ideology_gcc" = "Greek-Cypriots", "ideology_tcc" = "Turkish-Cypriots", "ideology_ger" = "Germany", "ideology_eu28" = "EU-28")
+
+
+#Calculating combined Cypriot means using population estimates from technical specifications in Eurobarometer codebooks
+ideology$weight <-c(741308/884534, 143226/884534, NA, NA)
+ideology <- ideology %>% mutate(ideology_w = ideology * weight)
+
+ideology_cyp <- ideology %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots")
+ideology_cyp <- ideology_cyp %>% select(-"ideology", -"weight")
+
+ideology_cyp <- ideology_cyp %>% 
+  summarise(ideology = sum(ideology_w))
+
+ideology_cyp$group <- c("Cyprus (GCC & TCC)")
+ideology <- ideology %>% select(-"ideology_w", -"weight")
+ideology <- rbind(ideology, ideology_cyp)
+
+
+#Calculating left-right ideology mean for all EU apart from Cyprus & Germany
+#Adding EB complex survey design & calculating ideology
+EB2018.90.3_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = EB2018.90.3)
+EU_count <- svyby(~d1_rec, ~country1, EB2018.90.3_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+
+EU_count <- as.data.frame(EU_count)
+EU_count <- EU_count %>% select(-"se")
+EU_count <- EU_count %>% rename(group = country1, ideology = d1_rec) 
+
+#Dataframe with all groups
+ideology_all <- rbind(ideology, EU_count)
+ideology_all$ideology <- round(ideology_all$ideology, 1) 
+ideology_all$group <- factor(ideology_all$group, levels = ideology_all$group) 
+
+#Dataframe for Cyprus commnuities & EU-28
+ideology_cyp <- ideology_all %>% filter(group == "Greek-Cypriots" | group == "Turkish-Cypriots" | group == "Cyprus" | group == "EU-28")
+
+#Dataframe for groups without separate Cyprus communities
+ideology_eu <- ideology_all %>% filter(group != "Greek-Cypriots" & group != "Turkish-Cypriots" & group != "EU-28")
+
+
+######Analysis 2: Calculating left-right ideology by gender for Cyprus and EU-28
+gcc <- EB2018.90.3 %>% filter(cyprus == "Greek-Cypriots")
+tcc <- EB2018.90.3 %>% filter(cyprus == "Turkish-Cypriots")
+
+EB2018.90.3_gcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = gcc)
+gcc_gen <- svyby(~d1_rec, ~d10_fac, EB2018.90.3_gcc_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+gcc_gen$group <- "Greek-Cypriots"
+
+EB2018.90.3_tcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w1, data = tcc)
+tcc_gen <- svyby(~d1_rec, ~d10_fac, EB2018.90.3_tcc_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+tcc_gen$group <- "Turkish-Cypriots"
+
+EB2018.90.3_eu_svy <- svydesign(strata = NULL, ids = ~0, weights = ~w23, data = EB2018.90.3)
+eu28_gen <- svyby(~d1_rec, ~~d10_fac, EB2018.90.3_eu_svy, svymean, se=F, na.rm=T, ci=F, keep.names=F)
+eu28_gen$group <- "EU-28"
+
+ideology_gen <- as.data.frame(rbind(gcc_gen, tcc_gen, eu28_gen))
+ideology_gen <- ideology_gen %>% rename(gender = d10_fac, ideology = d1_rec) 
+ideology_gen$ideology <- round(ideology_gen$ideology, 1) 
+ideology_gen$se <- round(ideology_gen$se, 2) 
+ideology_gen <- ideology_gen %>% mutate(group = factor(group, levels = c("EU-28", "Turkish-Cypriots", "Greek-Cypriots")))
+ideology_gen <- ideology_gen %>% mutate(gender = factor(gender, levels = c("Female", "Male")))
+
+save(ideology_gen, file=("ideology_gen.rdata"))
+save(ideology_eu, file=("ideology_eu.rdata"))
+
+
+######Analysis 3: Left-right ideology categories over time for Cyprus
+#No data for Turkish Cypriots, 2012-2013
+
+#Lists with data, weights, groups and variables to pass into survey estimate function
+id4 <- list(passedData = EB2004.62, passedWeights="V8", group="V6", estimate="V423_fac")
+id5 <- list(passedData = EB2005.63.4, passedWeights="V8", group="V6", estimate="V405_fac")
+id6 <- list(passedData = EB2006.65.2, passedWeights="V8", group="V6", estimate="V3305_fac")
+id7 <- list(passedData = EB2007.68.1, passedWeights="V8", group="V6", estimate="V415_fac")
+id8 <- list(passedData = EB2008.70.1, passedWeights="V8", group="V6", estimate="V665_fac")
+id9 <- list(passedData = EB2009.71.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id10 <- list(passedData = EB2010.74.2, passedWeights="V8", group="V6", estimate="V595_fac")
+id11 <- list(passedData = EB2011.75.3, passedWeights="v8", group="v6", estimate="v608_fac")
+id12 <- list(passedData = EB2014.81.4, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id13 <- list(passedData = EB2015.84.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id14 <- list(passedData = EB2016.85.2, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id15 <- list(passedData = EB2017.87.3, passedWeights="W1", group="COUNTRY", estimate="D1R1_fac")
+id16 <- list(passedData = EB2018.90.3, passedWeights="w1", group="country2", estimate="d1r1_fac")
+
+
+
+#####Calculating Left-Right Ideology Groups
+#Cyprus
+dataInfo <- list(id4, id5, id6, id7, id8, id9, id10, id11, id12, id13, id14, id15, id16) 
+results_gcc <- applyFunc2("GCC", dataInfo)
+results_gcc <- results_gcc[1:4,]
+colnames(results_gcc)<- c("GCC_2004","GCC_2005","GCC_2006","GCC_2007","GCC_2008","GCC_2009","GCC_2010","GCC_2011","GCC_2014","GCC_2015","GCC_2016","GCC_2017","GCC_2018")
+
+results_tcc <- applyFunc2("TCC", dataInfo)
+results_tcc <- results_tcc[1:4,]
+colnames(results_tcc)<- c("TCC_2004","TCC_2005","TCC_2006","TCC_2007","TCC_2008","TCC_2009","TCC_2010","TCC_2011","TCC_2014","TCC_2015","TCC_2016","TCC_2017","TCC_2018")
+
+ideo_cat <- cbind(results_gcc, results_tcc)
+ideo_cat <- mapply(mult_one,ideo_cat)
+ideo_cat <- as.data.frame(ideo_cat)
+
+ideo_cat<- ideo_cat %>% gather()
+ideo_cat$ideology <- c("Left", "Centre", "Right", " Don't Know")
+ideo_cat$ideology <- as.factor(ideo_cat$ideology)
+
+#Creating year and Cyprus group variables
+ideo_cat$year <- ideo_cat$key
+ideo_cat$year <- gsub("GCC_", "", ideo_cat$year)
+ideo_cat$year <- gsub("TCC_", "", ideo_cat$year)
+ideo_cat$year <- as.numeric(ideo_cat$year)
+
+ideo_cat <- ideo_cat %>% rename(group = key) 
+ideo_cat$group <- gsub("[0-9]*", "", ideo_cat$group)
+ideo_cat$group <- gsub("_", "", ideo_cat$group)
+ideo_cat$group <- as.factor(ideo_cat$group) 
+ideo_cat$group <- dplyr::recode(ideo_cat$group, "GCC" = "Greek-Cypriots", "TCC" = "Turkish-Cypriots")
+
+save(ideo_cat, file=("ideo_cat.rdata"))
+load("ideo_cat.rdata")
+```
+
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideo_cat.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideology_eu.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideology_gen.rdata")
+
+#####Plots
+
+#Analysis 1: Divergent lollipop plot of left-right ideology mean in 2018, Cyprus and EU
+
+ideology_eu <- ideology_eu %>% #Sorting for ggplot
+  arrange(ideology) %>%
+  mutate(group = factor(group, levels = .$group))
+
+cyp <- subset(ideology_eu, group == "Cyprus (GCC & TCC)")
+
+plot_ideology_eu <- ggplot(ideology_eu, aes(x=group, y=ideology, label=ideology)) + 
+  geom_point(stat='identity', fill="black", size=6)  +
+  geom_point(data=cyp, colour="#9702A7", size=6) +
+  geom_segment(aes(y = 5, 
+                   x = group, 
+                   yend = ideology, 
+                   xend = group), 
+               color = "black") +
+  geom_text(color="white", size=3) +
+  labs(title="Ideological Self-Identification in EU (2018)", 
+       subtitle = "Eurobarometer 90.3",
+       caption="www.c-pot.org",
+       y = "Left-Right Placement (1 = left, 10 = right)", x = "") + 
+  scale_y_continuous(breaks=seq(2,8,1), limits=c(2,8)) +
+  coord_flip() +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0))
+
+
+
+#Analysis 2: Bar chart for left-right ideology by gender in Cyprus and EU-28
+
+ideology_gen <- ideology_gen %>% #Sorting to display correct standard errors in plotly bar chart
+  arrange(gender)
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5, traceorder="reversed")
+
+#Annotation (individual title) attributes
+anot_ideo <- list(
+  text = "Ideological Self-Identification (2018)",
+  font = list(family = "avenir", size = 22, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .98,
+  showarrow = FALSE
+)
+
+anot_logo <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 17, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.25,
+  y = 0.27,
+  showarrow = FALSE
+)
+
+
+
+plot_ideology_gen <- plot_ly(ideology_gen, size = I(35)) %>%
+  add_bars(
+    y = ~group, yend = ~group,
+    x = ~ideology, xend = 0,
+    color = ~gender,
+    error_x = list(
+      type = "ideology_gen", 
+      array = ~se,
+      thickness = 2,
+      width = 4,
+      color = "black"))  %>%
+  layout(yaxis = list(title = ""),
+         xaxis = list(title = "Left-Right Placement (1 = left, 10 = right)", dtick = 1, tickfont = list(size = 15), range = c(1,7)),
+         legend = l,
+         annotations = list(anot_ideo, anot_logo))
+
+
+#Analysis 3: Plot for left-right ideology categories over time in Cyprus
+
+ideo_cat_gcc <- ideo_cat %>% filter(group == "Greek-Cypriots")
+ideo_cat_tcc <- ideo_cat %>% filter(group == "Turkish-Cypriots")
+
+#Legend attributes
+l <- list(font = list(family = "arial", size = 18, color = "#000"), x = 100, y = 0.5, traceorder="reversed")
+
+#Annotation (individual title) attributes
+anot_ideo_cat_gcc <- list(
+  text = "Greek-Cypriots",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.52,
+  y = .91,
+  showarrow = FALSE
+)
+
+anot_ideo_cat_tcc <- list(
+  text = "Turkish-Cypriots",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.52,
+  y = .91,
+  showarrow = FALSE
+)
+
+anot_ideo_cat <- list(
+  text = "Ideological Self-Identification",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = .98,
+  showarrow = FALSE
+)
+
+
+
+anot_logo <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 18, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.22,
+  y = 0.15,
+  showarrow = FALSE
+)
+
+pal <- c("#bbbbbb","#228833","#ee6677","#4477aa")
+
+plot_ideo_cat_gcc <- plot_ly(ideo_cat_gcc, y = ~value, x= ~year, 
+                             color = ~ideology, colors = pal, 
+                             type = "scatter",
+                             mode = "lines+markers", 
+                             line = list(width = 3), 
+                             marker = list(size = 5),
+                             legendgroup = ~ideology, showlegend = T) %>% 
+  layout(yaxis = list(title = "Percent", titlefont=list(size=18), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l, 
+         annotations = list(anot_ideo_cat_gcc))
+
+plot_ideo_cat_tcc <- plot_ly(ideo_cat_tcc, y = ~value, x= ~year, 
+                             color = ~ideology, colors = pal, 
+                             type = "scatter",
+                             mode = "lines+markers", 
+                             line = list(width = 3), 
+                             marker = list(size = 5),
+                             legendgroup = ~ideology, showlegend = F) %>% 
+  layout(yaxis = list(title = "Percent", titlefont=list(size=18), range = c(0,60), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 2, tickfont = list(size = 16), tickangle = 45),
+         legend = l,
+         annotations = list(anot_ideo_cat_tcc))
+
+#Combining plots for Cypriots
+plot_ideo_cat <- plotly::subplot(plot_ideo_cat_gcc, plot_ideo_cat_tcc, 
+                                             nrows = 1, margin = 0.04, shareX = F, shareY = T, 
+                                             titleY = TRUE) %>% 
+  layout(annotations = list(anot_ideo_cat, anot_logo), autosize = F, width = 920, height = 600) 
+
+```
+
+<br>
+
+>How do Cypriots classify their political ideologies and preferences? To what extent do they identify with the notions of the "left" and "right"?  
+• In general, Turkish-Cypriots are more likely to identify with the left or right than Greek-Cypriots. In turn, Greek-Cypriots are more likely to identify with the centre or to not express a preference than Turkish-Cypriots.  
+• The proportion of Cypriots that do not express a preference has gone from being the least common to the most common preference between 2004-2018.  
+• Cypriots on average are more to the right than most of the EU. Greek-Cypriot women tend to be more to the right than men, whereas in the EU overall, men are more to the right than women.
+<br><br>
+__Η Ιδεολογική Ταυτότητα στην Κύπρο__  
+Πώς κατατάσσουν οι Κύπριοι τις πολιτικές ιδεολογίες και προτιμήσεις τους; Σε ποιο βαθμό ταυτίζονται με τις αντιλήψεις της "αριστεράς" και της "δεξιάς";   
+• Σε γενικές γραμμές, οι Τουρκοκύπριοι ταυτίζονται με τις αντιλήψεις της αριστεράς ή της δεξιάς σε πιο ψηλά ποσοστά απ' ό,τι οι Ελληνοκύπριοι.  Οι Ελληνοκύπριοι ταυτίζονται με τις αντιλήψεις του κέντρου ή δεν εκφέρουν προτίμηση σε ψηλότερα επίπεδα απ' ό,τι οι Τουρκοκύπριοι.   
+• Το ποσοστό των Κυπρίων που δεν εκφέρει προτίμηση έχει αυξηθεί από την λιγότερη συχνή τοποθέτηση στην πιο συχνή τοποθέτηση μεταξύ το 2004 και 2018.    
+• Οι Κύπριοι τείνουν προς τα δεξιά σε ψηλότερα επίπεδα από το Κοινοτικό μέσο όρο. Οι Ελληνοκύπριες τοποθετούνται προς τα δεξιά περισσότερο απ' ό,τι οι άνδρες, ενώ στην ΕΕ συνολικά, οι άντρες τοποθετούνται προς τα δεξιά περισσότερο απ' ό,τι οι γυναίκες.  
+<br><br>
+__Kıbrıs'ta İdeolojik Kimlikler__  
+• Kıbrıslılar siyasi ideolojilerini ve tercihlerini nasıl tanımlıyorlar? "Sol" ve "sağ" kavramları ile kendilerini ne ölçüde özdeşleştiriyorlar? Kıbrıs Türkleri genel olarak Kıbrıs Rumlarına kıyasla sol veya sağ görüşlere daha yatkınlardır. Öte yandan Kıbrıs Rumları kendilerini çoğunlukla merkezde konumlandırıyorlar veya siyasi bir tercihte bulunmuyorlar.  
+• Siyasi görüş belirtmeyen Kıbrıslıların oranı 2004-2018 arasında en nadir rastlanan siyasi tercihten en sık rastlanan siyasi tercihe ilerlemiştir.  
+• Kıbrıslılar çoğunlukla Avrupa Birliği’ne nazaran sağa daha yatkınlardır. Kıbrıslı Rum kadınlar erkeklere göre sağ görüşlere sahipken Avrupa Birliği’nde erkekler genellikle kadınlara göre sağ görüşlere daha meyillilerdir.  
+
+<br>
+How do Cypriots classify their political ideologies and preferences? To what extent do they identify with the notions of the "left" and "right"?  
+<br>
+To explore this we use Eurobarometer survey questions from 2004-2018 that ask respondents to place themselves on a 10-point scale where '1' represents the left and '10' represents the right. First we consider the extent to which Cypriots identify with the left and right over time. The Eurobarometer considers responses from '1'-'4' as  'left', '5'-'6' as 'centre', and '7'-'10' as 'right'. Then we'll examine average scores on the 10-point scale to get a sense of how it compares to the rest of the EU.  
+<br>
+The results show that in most years, Turkish-Cypriots are more likely to identify with the left or right than Greek-Cypriots. In turn, Greek-Cypriots are more likely to identify with the centre or to not express a preference (i.e. say they don't know) than Turkish-Cypriots. Among Greek-Cypriots, the proportion that identifies with the left has declined the most during this time period, while the proportion that does not express a preference has increased substantially.  
+<br>
+In fact, the lack of an ideological preference has become increasingly common among all Cypriots, as more recently it has risen among Turkish-Cypriots as well. The proportion of Cypriots that do not express a preference has gone from being the least common to the most common preference over this time period. This may reflect the increasing disillusionment with politics in Cyprus discussed in the first two blog posts, and again particularly for Greek-Cypriots.
+<br><br>
+`r plot_ideo_cat`
+<br><br><br><br><br><br><br><br>
+Note: no data For Turkish-Cypriots in 2012 & 2013.
+<br><br>
+_Interactive visualizations: hover over to display values, double-click to zoom, click legend to hide/show specific lines_<br><br><br>
+
+Despite these differences in ideological preferences, the most recent 2018 data show that among people that do identify with an ideological position (as opposed to those that say they don't know), the average score of Greek-Cypriots and Turkish-Cypriots on the 10-point left-right scale is quite similar. Greek-Cypriot women are more to the right than men, whereas in the EU overall, men tend to be more to the right than women.  
+<br>
+Cypriots on average are more to the right than most of the EU. Cypriots' average placement on the 10-point scale is 5.5, whereas the EU-28 score is 5.1. Out of 28 countries, Cypriots rank 6th (along with Slovakia and Romania) on the left-right continuum. 
+<br><br>
+`r plot_ideology_gen`
+<br><br>
+ 
+```{r echo=FALSE}
+
+plot_ideology_eu
+```
+<br><br>
+__Data sources__  
+Eurobarometer: 62, 63.4, 65.2, 68.1, 70.1, 71.3, 74.2, 75.3, 81.4, 84.3, 85.2, 87.3, 90.3  
+
+
+
+
+<!--chapter:end:ideological-identification.Rmd-->
+
+---
+title: Religiosity in Cyprus
+author: Yioryos Nardis
+date: '2020-03-10'
+slug: religiosity-in-cyprus
+categories: []
+tags:
+  - religion
+subtitle: ''
+description: ''
+image: ''
+---
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access World/European Values Survey data files from website 
+load("WVS2006.rdata")
+load("EVS2008.rdata")
+load("WVS2011.rdata")
+
+
+#####Recoding variables#####  
+
+#Belong to religion: Do you belong to a religion or religious denomination? If yes, which one?. Recode to yes/no/dk
+WVS2006$V185_rec <- car::recode(WVS2006$V185, as.factor = T, "'0' = 'No'; '-5' = NA; '-2' = NA; '-1' = NA; else = 'Yes'")
+EVS2008$v105_rec <- car::recode(EVS2008$v105, as.factor = T, "'1' = 'Yes'; '2' = 'No'")
+WVS2011$V144_rec <- car::recode(WVS2011$V144, as.factor = T, "'0' = 'No'; '-5' = NA; '-4' = NA; '-2' = NA; '-1' = NA; else = 'Yes'")
+
+
+#Religious identification: Independently of whether you attend religious services or not, would you say you are
+WVS2006$V187_rec <- as.numeric(WVS2006$V187)
+WVS2006$V187_rec <- dplyr::recode_factor(WVS2006$V187_rec, '1' = 'A religious person', '2' = 'Not a religious person', '3' = 'A convinced atheist')
+
+EVS2008$v114_rec <- car::recode(EVS2008$v114, as.factor = T, "'1' = 'A religious person'; '2' = 'Not a religious person'; '3' = 'A convinced atheist'")
+
+WVS2011$V147_rec <- as.numeric(WVS2011$V147)
+WVS2011$V147_rec <- dplyr::recode_factor(WVS2011$V147_rec, '1' = 'A religious person', '2' = 'Not a religious person', '3' = 'A convinced atheist')
+
+
+#Importance of god: How important is God in your life? (1-10)
+WVS2006$V192_rec <- as.numeric(WVS2006$V192)
+WVS2006$V192_rec[WVS2006$V192_rec < 1] <- NA
+
+EVS2008$v129_rec <- as.numeric(EVS2008$v129)
+EVS2008$v129_rec[EVS2008$v129_rec < 1] <- NA
+
+WVS2011$V152_rec <- as.numeric(WVS2011$V152)
+WVS2011$V152_rec[WVS2011$V152_rec < 1] <- NA
+
+
+#Subsetting Cypriot respondents  
+WVS2006$CYP <- NA
+WVS2006[12651:13150, 'CYP'] <- 'Turkish-Cypriots' #Cases 1-500 are Turkish-Cypriot respondents (12651 - 13150)
+WVS2006[13151:13700, 'CYP'] <- 'Greek-Cypriots' #cases 501-1050 are Greek-Cypriot respondents (13151 - 13700)
+WVS2006$CYP <- as.factor(WVS2006$CYP)
+WVS2006_cyp <- filter(WVS2006, V2 == 196)
+
+EVS2008$c_abrv <- dplyr::recode(EVS2008$c_abrv, "CY" = "Greek-Cypriots", "CY-TCC" = "Turkish-Cypriots")
+EVS2008$c_abrv <- as.factor(EVS2008$c_abrv)
+EVS2008_cyp <- filter(EVS2008, c_abrv == 'Greek-Cypriots' | c_abrv == 'Turkish-Cypriots')
+EVS2008_cyp <- rename(EVS2008_cyp, CYP = c_abrv)
+EVS2008_cyp$CYP <- droplevels(EVS2008_cyp$CYP)
+
+WVS2011$CYP <- NA
+WVS2011[10343:10842, 'CYP'] <- 'Greek-Cypriots' #Cases 1-500 are Turkish-Cypriot respondents (11543 - 12402)
+WVS2011[10843:11342, 'CYP'] <- 'Turkish-Cypriots' #cases 501-1000 are Greek-Cypriot respondents (12043 - 12542)
+WVS2011$CYP <- as.factor(WVS2011$CYP)
+WVS2011_cyp <- filter(WVS2011, V2 == '196')
+
+
+
+#####Functions to calculate weighted survey estimates
+
+#Fuction passing lists of data, weight, group and trust measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+
+#Function calling 'Func'. Calcuates weighted survey estimates for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc  <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:2) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Function calling 'Func'. Calcuates mean estimates of given measure by group and subgroup (GCC/TCC) across time
+applyFunc2  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+
+#Function to convert to percentages
+mult_one <- function(var1)
+{
+  round((var1*100), 1) 
+}
+
+
+######Calculating religiosity in Cyprus######
+
+#Lists with data, weights, groups and variables to pass into survey estimate function
+#WVS2006, 1 country code, weights only for two communities.
+#EVS2008, 2 country codes, separate weights within each community. 
+#WVS2011, 1 country code, weights for two communities and demographics.
+
+###Belong to religion (percentage for each category)
+r1 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V185_rec") #Cypriots 2006
+r2 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V144_rec") #Cypriots 2011
+r3 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V185_rec") #GCC & TCC 2006
+r4 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v105_rec") #GCC & TCC 2008
+r5 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V144_rec") #GCC & TCC 2011
+
+#Cypriots
+dataInfo <- list(r1, r2)
+belong <- applyFunc("196", dataInfo) 
+belong[, ncol(belong)+1] <- NA
+colnames(belong) <- c("y_2006", "y_2011", "y_2008")
+belong$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r3, r4, r5)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+results <- drop_na(results)
+colnames(results) <- c("y_2006", "y_2008", "y_2011")
+results$Group <- c("Greek-Cypriots")
+belong <- rbind(belong, results)
+
+#Turkish-Cypriots
+results <- applyFunc("Turkish-Cypriots", dataInfo) 
+results <- drop_na(results)
+colnames(results) <- c("y_2006", "y_2008", "y_2011")
+results$Group <- c("Turkish-Cypriots")
+belong <- rbind(belong, results)
+belong$Belong <- c("No", "Yes")
+
+
+#Calculating combined Cypriot percentages for 2008 using population information from EVS technical report 
+#Rough estimate given that values are almost identical
+belong <- transform(belong, y_2008 = case_when(
+  Group=='Cypriots' & Belong == 'No' ~ 0.004135629*(605024 / 799774) + 0.035514883*(194750 / 799774),
+  TRUE ~ y_2008))
+
+belong <- transform(belong, y_2008 = case_when(
+  Group=='Cypriots' & Belong == 'Yes' ~ 0.995864371*(605024 / 799774) + 0.964485117*(194750 / 799774),
+  TRUE ~ y_2008))
+
+
+#Reshape from wide to long
+belong <- belong %>% gather(Year, Rate, y_2006, y_2008, y_2011)
+belong$Year <- gsub("y_", "", belong$Year)
+belong$Year <- as.numeric(belong$Year)
+belong$Group <- as.factor(belong$Group)
+belong$Rate <- mult_one(belong$Rate)
+belong <- belong[order(belong$Year), ] 
+
+
+
+###Are you religious (3 categories)
+r6 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V187_rec") #Cypriots 2006
+r7 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V147_rec") #Cypriots 2011
+r8 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V187_rec") #GCC & TCC 2006
+#r9 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v114_rec") #GCC 2008, different response options for TCC
+r10 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V147_rec") #GCC & TCC 2011
+
+
+#Cypriots
+dataInfo <- list(r6, r7)
+religious <- applyFunc("196", dataInfo) 
+colnames(religious) <- c("y_2006", "y_2011")
+religious$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r8, r10)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+colnames(results) <- c("y_2006", "y_2011")
+results$Group <- c("Greek-Cypriots")
+religious <- rbind(religious, results)
+
+#Turkish-Cypriots
+results <- applyFunc("Turkish-Cypriots", dataInfo) 
+colnames(results) <- c("y_2006", "y_2011")
+results$Group <- c("Turkish-Cypriots")
+religious <- rbind(religious, results)
+religious$Relig <- c("Religious", "Not religious", "Atheist")
+religious$Relig <- as.factor(religious$Relig)
+religious$Group <- as.factor(religious$Group)
+religious$relig <- NULL
+
+
+#Reshape from wide to long
+religious <- religious %>% gather(Year, Rate, y_2006, y_2011)
+religious$Year <- gsub("y_", "", religious$Year)
+religious$Year <- as.factor(religious$Year)
+religious$relig <- as.factor(religious$Relig)
+religious$Rate <- mult_one(religious$Rate)
+
+
+
+###Importance of god (mean)
+r11 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="V2", estimate="V192_rec") #Cypriots 2006
+r12 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="V2", estimate="V152_rec") #Cypriots 2011
+r13 <- list(passedData = WVS2006_cyp, passedWeights="V259", group="CYP", estimate="V192_rec") #GCC & TCC 2006
+r14 <- list(passedData = EVS2008_cyp, passedWeights="weight_g", group="CYP", estimate="v129_rec") #GCC 2008
+r15 <- list(passedData = WVS2011_cyp, passedWeights="V258", group="CYP", estimate="V152_rec") #GCC & TCC 2011
+
+
+#Cypriots
+dataInfo <- list(r11, r12)
+importance_god <- applyFunc2("mean", "196", dataInfo) 
+importance_god[nrow(importance_god)+1, ] <- NA
+importance_god$Year <- c(2006, 2011, 2008)
+importance_god$Group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r13, r14, r15)
+results <- applyFunc2("mean", "Greek-Cypriots", dataInfo) 
+results$Year <- c(2006, 2008, 2011)
+results$Group <- c("Greek-Cypriots")
+importance_god <- rbind(importance_god, results)
+
+#Turkish-Cypriots
+results <- applyFunc2("mean", "Turkish-Cypriots", dataInfo) 
+results$Year <- c(2006, 2008, 2011)
+results$Group <- c("Turkish-Cypriots")
+importance_god <- rbind(importance_god, results)
+importance_god$Group <- as.factor(importance_god$Group)
+
+
+#Calculating combined Cypriot percentages for 2008 using population information from EVS technical report 
+#Rough estimate given that values are almost identical
+importance_god <- transform(importance_god, mean = case_when(
+  Group=='Cypriots' & Year == '2008' ~ 8.500932*(605024 / 799774) + 8.648479*(194750 / 799774),
+  TRUE ~ mean))
+
+
+#Calculating importance of God for other European countries in WVS6
+r17 <- list(passedData = WVS2011, passedWeights="V258", group="V2", estimate="V152_rec")
+
+
+#Calculating mean for European countries in WVS6
+dataInfo <- list(r17)
+god <- applyFunc2("mean", "112", dataInfo) #Belarus
+
+results <- applyFunc2("mean", "276", dataInfo) #Germany
+god <- rbind(god, results)
+results <- applyFunc2("mean", "233", dataInfo) #Estonia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "528", dataInfo) #Netherlands
+god <- rbind(god, results)
+results <- applyFunc2("mean", "616", dataInfo) #Poland
+god <- rbind(god, results)
+results <- applyFunc2("mean", "642", dataInfo) #Romania
+god <- rbind(god, results)
+results <- applyFunc2("mean", "643", dataInfo) #Russia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "705", dataInfo) #Slovenia
+god <- rbind(god, results)
+results <- applyFunc2("mean", "724", dataInfo) #Spain
+god <- rbind(god, results)
+results <- applyFunc2("mean", "752", dataInfo) #Sweden
+god <- rbind(god, results)
+
+god$Group <- as.factor(c("Belarus", "Germany", "Estonia", "Netherlands", "Poland", "Romania", "Russia", "Slovenia", "Spain", "Sweden"))
+god$Year <- as.numeric(c("2011", "2013", "2011", "2012", "2012", "2012", "2011", "2011", "2011", "2011"))
+importance_god <- rbind(importance_god, god)
+
+
+save(belong, file=("belong_religion.rdata"))
+save(importance_god, file=("importance_god.rdata"))
+save(religious, file=("religious.rdata"))
+```
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/belong_religion.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/religious.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/importance_god.rdata")
+
+
+#####Plots
+
+#Analysis 1: Belong to relgion
+
+#Legend attributes
+l <- list(font = list(family = "avenir", size = 18, color = "#000"), x = 100, y = 0.5)
+
+#Annotation attributes
+anot_belong <- list(
+  text = "% of Cypriots that Belong to Religion",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "left",
+  x = .3,
+  y = 1,
+  showarrow = FALSE
+)
+
+anot_source <- list(
+  text = "Data: World Values Survey 5 & 6; European Values Study 4",
+  font = list(family = "avenir", size = 14, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = -.02,
+  y = -0.13,
+  showarrow = FALSE
+)
+
+anot_url <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 17, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.4,
+  y = 0.95,
+  showarrow = FALSE
+)
+
+anot_logo <- list(
+  text = "Cyprus Public Opinion Trends",
+  font = list(family = "avenir", size = 17, color = "#7e7e7e"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.4,
+  y = 1,
+  showarrow = FALSE
+)
+
+
+belong_yes <- subset(belong, Belong == "Yes" & Group !="Cypriots")
+belong_yes$Group <- factor(belong_yes$Group)
+belong_yes$Belong <- NULL
+belong_yes$Year <- as.factor(belong_yes$Year)
+
+#Colours
+#Cypriots;9702A7
+#Turkish-Cypriots; FFCF00
+#Greek-Cypriots; 00A876
+
+pal <- c("#00A876","#FFCF00")
+
+plot_belong <- plot_ly(belong_yes, y = ~Rate, x= ~Year, 
+                       color = ~Group, colors = pal,
+                       type = "scatter", 
+                       mode = "lines+markers",
+                       line = list(width = 3), 
+                       marker = list(size = 6),
+                       showlegend = T) %>% 
+  layout(yaxis = list(title = "", titlefont=list(size=16), range = c(0,110), tickfont = list(size = 16)),
+         xaxis = list(title = "", dtick = 1, tickfont = list(size = 13), showgrid = F),
+         legend = l,
+         annotations = anot_belong) %>% 
+  layout(annotations = anot_url) %>% 
+  layout(annotations = anot_source) %>% 
+  layout(annotations = anot_logo)
+
+
+
+#Analysis 2: Religious identification
+
+religious_sub <- subset(religious, Group !="Cypriots")
+religious_sub$Group <- factor(religious_sub$Group)
+
+year_one <- filter(religious_sub, Year == 2006) %>% 
+  group_by(Group) %>% arrange(desc(Relig)) %>% 
+  mutate(pos = cumsum(Rate) - Rate / 2)   
+
+year_two <- filter(religious_sub, Year == 2011) %>% 
+  group_by(Group) %>% arrange(desc(Relig)) %>% 
+  mutate(pos = cumsum(Rate) - Rate / 2)   
+
+plot_religious <- ggplot() +
+  geom_bar(data=religious_sub, 
+           aes(y = Rate, x = Group, fill = Relig), 
+           stat="identity",
+           position='stack', 
+           width = .6) +
+  facet_grid( ~ Year) +
+  geom_text(data = year_one, 
+            aes(y = pos, x = Group, label = Rate)) +
+  geom_text(data = year_two, 
+            aes(y = pos, x = Group, label = Rate)) +
+  labs(title="Religious Identification in Cyprus", 
+       caption = "Data: World Values Survey 5 & 6",
+       y = "", x = "") +
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.58, .975)) +
+  theme(plot.tag = element_text(size = 11, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = 0)) +
+  theme(legend.title = element_blank()) +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey"), 
+        panel.grid.minor.y = element_line(size=.1, color="grey"),
+        axis.title.y = element_text(color="black", size=15)) +
+  aes(stringr::str_wrap(Group, 2), Rate) + xlab(NULL) + ylab("Percent")
+
+
+
+#Analysis 3: Importance of god
+
+importance_god_sub <- filter(importance_god, Group !="Greek-Cypriots", Group !="Turkish-Cypriots", Year != "2006", Year !="2008")
+importance_god_sub$Group <- car::recode(importance_god_sub$Group, as.factor = T, "'Cypriots' = 'Cyprus (GCC & TCC)'")
+importance_god_sub$Group <- factor(importance_god_sub$Group)
+importance_god_sub$mean <- round(importance_god_sub$mean, 1)
+importance_god_sub$Year <- NULL
+
+importance_god_sub <- importance_god_sub %>% #Sorting for ggplot
+  arrange(mean) %>%
+  mutate(Group = factor(Group, levels = .$Group), col = ifelse(Group == 'Cyprus (GCC & TCC)', '#9702A7', 'grey40'))
+
+cyp <- subset(importance_god_sub , Group == "Cyprus (GCC & TCC)")
+
+plot_importance_god_sub <- ggplot(importance_god_sub, aes(x=Group, y=mean, label=mean)) + 
+  geom_point(stat='identity', fill="black", size=7)  +
+  geom_point(data=cyp, colour="#9702A7", size=7) +
+  geom_segment(aes(y = 5, 
+                   x = Group, 
+                   yend = mean, 
+                   xend = Group), 
+               color = importance_god_sub$col) +
+  geom_text(color="white", size=3.3) +
+  labs(title="Importance of God in One's Life", 
+       caption="Data: World Values Survey 6 (2011-2013)",
+       y = "\n1 = not at all important,  10 = very important", x = "") + 
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.58, .975)) +
+  theme(plot.tag = element_text(size = 11, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey40", hjust = -.4)) +
+  scale_y_continuous(breaks=seq(1,9,1), limits=c(1,9)) +
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey90"),
+        plot.title = element_text(size = 14, margin=margin(0,0,20,0))) 
+```
+
+<br>
+
+>How important is religion in Cypriots’ lives in light of global trends in religiosity?  
+• Religious values are prevalent in Cyprus and entrenched in people’s identity, regardless of whether one practices or considers themselves to be religious.  
+• Nearly all Cypriots consider themselves to be part of a religion or religious denomination, irrespective of whether they attend religious services.  
+• Overall, Greek-Cypriots tend to be slightly more religious than Turkish-Cypriots.  
+• A large majority of Cypriots state that God plays an important role in their life.
+<br><br>
+__Η Θρησκευτικότητα στην Κύπρο__  
+Πόσο σημαντικός είναι ο ρόλος της θρησκείας στις ζωές των Κυπρίων, δεδομένων των παγκόσμιων τάσεων γύρω από την θρησκευτικότητα;   
+• Οι θρησκευτικές αξίες είναι διαδεδομένες και κατοχυρωμένες στην κοινωνική ταυτότητα των Κυπρίων, ανεξάρτητα από το αν κάποιος θεωρεί τον εαυτό του ως θρησκευόμενο.  
+• Σχεδόν όλοι οι Κύπριοι δηλώνουν πως ανήκουν σε μία θρησκεία ή θρησκευτικό δόγμα, ασχέτος από το αν ασκούν θρησκευτικά καθήκοντα ή συμμετέχουν σε θρησκευτικές λιτουργίες.  
+• Γενικά, οι Ελληνοκύπριοι τείνουν να είναι λίγο πιο θρήσκοι από τους Τουρκοκύπριους.  
+• Η μεγάλη πλειοψηφία των Κυπρίων δηλώνει ότι ο θεός διαδραματίζει σημαντικό ρόλο στη ζωή τους.
+<br><br>
+__Kıbrıs’ta Dindarlık Eğilimi__  
+Dindarlık konusundaki küresel eğilimlerin ışığında, Kıbrıslıların hayatında din ne kadar önem teşkil ediyor?  
+• Kıbrıs’ta dini değerler yaygın olarak görülüyor ve bu değerler, kişilerin dinin gerekliliklerini yerine getirip getirmediklerinden veya kendilerini dindar olarak görüp görmediklerinden bağımsız olarak kimliklerinin bir parçası haline gelmiş bulunuyor.  
+• Genel olarak, Kıbrıslı Rumlar Kıbrıslı Türklere kıyasla biraz daha fazla dindarlık eğilimi gösteriyor.  
+• Kıbrıslıların büyük bir bölümü, Tanrı’nın hayatlarında önemli bir rol oynadığını belirtiyor.
+
+<br>
+This post explores the importance of religion in Cypriots’ lives in light of global trends in religiosity. The decline of traditional religious practices and beliefs across developed societies has eroded the role of religious institutions in people’s lives. At the same time, traditional religious beliefs and values remain strong in developing societies, meaning that there are more people with such beliefs in the world (Norris & Inglehart, 2004).  
+<br>
+How do Cypriots identify with religion given these global trends? Three aspects of religiosity that capture the significance of religious values and beliefs in Cypriot society are examined: (i) belonging to a religion, (ii) whether one considers themselves to be religious, and (iii) the importance of God in one’s life. The analysis uses World Values Survey / European Values Study data from 2006, 2008 and 2011.  
+<br>
+Religious belonging is pervasive in Cypriot society, irrespective of whether people practice or attend religious services. Nearly all Cypriots consider themselves to be part of a religion or religious denomination. Across the three surveys, 93-99% of Greek-Cypriots and Turkish-Cypriots state that they belong to a religion.  
+<br><br>
+`r plot_belong`
+<br>
+_Interactive visualization: hover over to display values, double-click to zoom, click legend to hide/show specific lines_<br><br>
+
+When asked if they consider themselves to be religious, more than half say that they are religious, as opposed to not religious or atheist. While 2006 data suggest relatively similar levels of religious identification among Greek-Cypriots and Turkish-Cypriots, 2011 data suggest that Greek-Cypriots consider themselves to be significantly more religious than Turkish-Cypriots. Very few people identify as atheist. In both years aethism tends to be higher among Turkish-Cypriots, as around 1% of Greek-Cypriots and 3-5% of Turkish Cypriots identify as atheist. 
+<br><br>
+
+```{r echo=FALSE}
+
+plot_religious
+```
+
+In addition, a large majority of Cypriots state that God plays an important role in their life. Asked to place themselves on a 10-point scale where ‘1’ means that ‘God is not at all important in my life’ and ‘10’ means that ‘God is very important in my life’, Cypriots score higher than nearly all other European countries in Wave 6 of the World Values Survey (2011 - 2013). Cypriots’ average on the 10-point scale is 8.6. Out of eleven European countries, Cypriots rank 2nd after Romania. Greek-Cypriots and Turkish-Cypriots rate the importance of God in their lives very similarly. 
+<br><br>
+
+```{r echo=FALSE}
+
+plot_importance_god_sub
+```
+
+This analysis indicates that religion is entrenched in Cypriots’ identity, regardles of how often one may practice or if one considers themselves to be religious. Even those that are not religious clearly feel that they belong to a religious community. We see the prevalence of religion reflected in school curricula, the influence of religious leaders in government affairs, and the frequent media platforms given to religious leaders to discuss political and [social affairs.](https://www.alphanews.live/cyprus/mitropolitis-pafoy-den-metadidetai-o-koronoios-me-ti-theia-koinonia-binteo){target="_blank"}
+<br><br>
+Why are religious values so prevalent in Cyprus? Research shows that exposure to existential threats, i.e. physical, societal, and personal threats, drives religiosity (Norris & Inglehart, 2004). It persists most strongly among the more vulnerable that typically face survival-threatening risks, particularly those that live in low-income societies and failed states. In this regard Cypriots, and the physical and psychological threats they face due to the continuing conflict on the island, fit this explanation.  
+<br>
+ __Data sources__  
+World Values Survey: WVS 5, WVS 6 <br>
+European Values Study: EVS 4
+<br><br>
+__References__  
+_Alpha News._ (2019). Metropolitan Bishop of Paphos: Corona Virus Cannot be Transmitted Through Holy Communion. [Available here.](https://www.alphanews.live/cyprus/mitropolitis-pafoy-den-metadidetai-o-koronoios-me-ti-theia-koinonia-binteo){target="_blank"}
+<br>
+Norris, P., & Inglehart, R. (2004). _Sacred and Secular: Religion and Politics Worldwide_. Cambridge University Press.
+
+<!--chapter:end:religiosity-in-cyprus.Rmd-->
+
+---
+title: 'Welcome to C-POT'
+author: 'Yioryos Nardis'
+date: '2019-08-26'
+slug: welcome
+categories: []
+tags: 
+ - general
+subtitle: ''
+description: ''
+image: ''
+---
+
+Welcome to Cyprus Public Opinion Trends (C-POT)!  
+<br>
+Through this blog I’ll be providing non-partisan information and quantitative analysis on Cypriots’ attitudes towards the social, political and cultural issues their society faces. Its objective is to make Cypriots’ views more accessible to the general public, journalists, academics and political professionals. Discussion of Greek-Cypriot and Turkish-Cypriot public opinion is a central feature of this endeavor. Quantitative analyses are based on publicly available survey data, and to ensure transparency information to replicate all analyses is provided. Occasional contributions from guest writers will also be featured.  
+<br>
+I hope you enjoy the content! Please feel free to send me comments, suggestions, and ideas. <br><br>
+_Contact_  
+Email: <a href="mailto:yioryos@gmail.com">yioryos@gmail.com</a>  
+[LinkedIn](https://www.linkedin.com/in/yioryosnardis){target="_blank"}  
+<br>
+Yioryos Nardis  
+Senior Researcher  
+Institute for Social Research-Center for Political Studies  
+University of Michigan (USA)  
+<br>
+
+—
+<br><br>
+Καλώς ορίσατε στις Τάσεις της Κοινής Γνώμης στην Κύπρο (C-POT)!  
+<br>
+Μέσο αυτού του ιστολογίου θα παρέχω ακομμάτιστες πληροφορίες και ποσοτική ανάλυση για τις διαχρονικές στάσεις των Κυπρίων σχετικά με τα κοινωνικά, πολιτικά και πολιτιστικά θέματα που αντιμετωπίζει η κοινωνία τους. Ο στόχος του είναι να κάνει τις απόψεις των Κυπρίων πιο προσιτές για το ευρύτερο κοινό, δημοσιογράφους, ακαδημαϊκούς και επαγγελματίες της πολιτικής. Η συζήτηση της κοινής γνώμης των Ελληνοκυπρίων και Τουρκοκυπρίων θα είναι σημαντικό χαρακτηριστικό αυτής της προσπάθειας. Η ποσοτικές αναλύσεις βασίζονται σε δημοσίως διαθέσιμα δεδομένα από έρευνες επισκόπησης, και για λόγους διαφάνειας παρέχονται πληροφορίες που επιτρέπουν την αναπαραγωγή όλων των αναλύσεων. Επίσης, κάποτε θα περιέχει και συνεισφορές από φιλοξενούμενους συγγραφείς.<br>
+<br>
+Ελπίζω να σας αρέσει το περιεχόμενο! Παρακαλώ μην διστάσετε να μου στείλετε σχόλια, εισηγήσεις και ιδέες.
+<br><br>
+_Επικοινωνία  _  
+Email: <a href="mailto:yioryos@gmail.com">yioryos@gmail.com</a>  
+[LinkedIn](https://www.linkedin.com/in/yioryosnardis/){target="_blank"}      
+<br>
+Γιώργος Ναρδής  
+Ανώτερος Ερευνητής  
+Ινστιτούτο Κοινωνικής Έρευνας-Κέντρο Πολιτικών Με  λετών
+Πανεπιστήμιο του Μίσιγκαν (ΗΠΑ).
+<br>
+
+—
+<br><br>
+Kıbrıs Kamuoyu Trendleri’ne (C-POT) hoş geldiniz!  
+<br>
+Blog, Kıbrıslıların toplumda karşılaştıkları sosyal, politik ve kültürel meselelere yönelik tutumları hakkında tarafsız bilgi ve sayısal analiz sağlamaktadır. Blogun amacı, Kıbrıslıların görüşlerini halk, gazeteciler, akademisyenler ve politika profesyonelleri tarafından daha erişilebilir hale getirmektir. Kamuoyunda Kıbrıslı-Rum ve Kıbrıslı-Türk fikrinin tartışılması, bu girişimin merkezi özeliğini oluşturmaktadır. Buradaki sayısal analizler kamuya açık anket verilerine dayanmaktadır. Şeffaflık açısından, tüm analizlerin tekrarlanabileceği yazılım kodu herkesin kullanımına açıktır. Zaman zaman konuk yazarların katkıları da sunulacaktır.  
+<br>
+Umarım içeriğin tadını çıkarırsınız! Lütfen yorum, öneri ve fikirleriniz için benimle iletişime geçmekten çekinmeyiniz.  <br>
+
+_İletişim    _  
+Email: <a href="mailto:yioryos@gmail.com">yioryos@gmail.com</a>  
+[LinkedIn](https://www.linkedin.com/in/yioryosnardis/){target="_blank"}  
+
+Yioryos Nardis    
+Kıdemli Araştırmacısı    
+Sosyal Araştırmalar Enstitüsü-Siyasal Çalışmalar Merkezi    
+Michigan Üniversitesi (ABD)
+
+
+<!--chapter:end:welcome.Rmd-->
+
