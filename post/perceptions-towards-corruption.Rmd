@@ -1,0 +1,858 @@
+---
+title: 'Perceptions Towards Corruption and Accountability in the Public Sector'
+author: Yioryos Nardis
+date: '2021-01-25'
+slug: perceptions-towards-corruption
+categories: []
+tags:
+  - corruption
+subtitle: ''
+description: ''
+image: ''
+---
+
+
+```{r setup, eval=FALSE, echo=FALSE}
+library(haven)
+library(labelled)
+library(survey)
+library(dplyr)
+library(tidyr)
+library(stats)
+library(Hmisc)
+library(car)
+library(sjmisc)
+
+knitr::opts_knit$set(root.dir = '')
+
+
+#Access World/European Values Survey data files from website 
+load("WVS7.rdata")
+
+####Recoding Variables####
+
+#Q113: Corruption by state authorities
+table(WVS7$Q113)
+WVS7$Q113_rec <- car::recode(WVS7$Q113, as.factor = T, "NA = 'No Response'; '1' = 'None of them'; '2' = 'Few of them'; '3' = 'Most of them'; '4' = 'All of them'")
+WVS7$Q113_rec <- factor(WVS7$Q113_rec, levels = c("No Response", "None of them", "Few of them", "Most of them", "All of them"))
+table(WVS7$Q113_rec)
+
+#Q114: Corruption by business executives
+table(WVS7$Q114_rec)
+WVS7$Q114_rec <- car::recode(WVS7$Q114, as.factor = T, "NA = 'No Response'; '1' = 'None of them'; '2' = 'Few of them'; '3' = 'Most of them'; '4' = 'All of them'")
+WVS7$Q114_rec <- factor(WVS7$Q114_rec, levels = c("No Response", "None of them", "Few of them", "Most of them", "All of them"))
+
+#Q115: Corruption by local authorities
+table(WVS7$Q115)
+WVS7$Q115_rec <- car::recode(WVS7$Q115, as.factor = T, "NA = 'No Response'; '1' = 'None of them'; '2' = 'Few of them'; '3' = 'Most of them'; '4' = 'All of them'")
+WVS7$Q115_rec <- factor(WVS7$Q115_rec, levels = c("No Response", "None of them", "Few of them", "Most of them", "All of them"))
+
+#Q116: Corruption by civil service providers
+table(WVS7$Q116)
+WVS7$Q116_rec <- car::recode(WVS7$Q116, as.factor = T, "NA = 'No Response'; '1' = 'None of them'; '2' = 'Few of them'; '3' = 'Most of them'; '4' = 'All of them'")
+WVS7$Q116_rec <- factor(WVS7$Q116_rec, levels = c("No Response", "None of them", "Few of them", "Most of them", "All of them"))
+
+#Ideology
+table(WVS7$Q240)
+table(is.na(WVS7$Q240))
+WVS7$Q240_rec <- car::recode(WVS7$Q240, as.factor = F, "NA = '0'")
+
+#‘1’-‘4’ as ‘left’, ‘5’-‘6’ as ‘centre’, and ‘7’-‘10’ as ‘right’.
+WVS7$Q240_rec <- car::recode(WVS7$Q240_rec, as.factor=T, "0 = 'DK'; 1:4 = 'Left'; 5:6 = 'Centre'; 7:10 = 'Right'")
+WVS7$Q240_rec <- dplyr::recode(WVS7$Q240_rec, "DK" = "Don't know")
+levels(WVS7$Q240_rec)
+
+#Gender
+table(WVS7$Q260)
+table(is.na(WVS7$Q260)) #0
+WVS7$Q260_rec <- car::recode(WVS7$Q260, as.factor = T, "1 = 'Male'; 2 = 'Female'")
+
+#Subsetting Cypriot respondents  
+WVS7$CYP <- NA
+WVS7[WVS7$W_WEIGHT == 0.520206773 & WVS7$B_COUNTRY == 196, 'CYP'] <- 'Turkish-Cypriots' 
+WVS7[WVS7$W_WEIGHT == 1.479793227 & WVS7$B_COUNTRY == 196, 'CYP'] <- 'Greek-Cypriots' 
+#WVS7[WVS7$LNGE_ISO == 'el' & WVS7$B_COUNTRY == 196, 'CYP'] <- 'Greek-Cypriots' 
+#WVS7[WVS7$LNGE_ISO == 'tr' & WVS7$B_COUNTRY == 196, 'CYP'] <- 'Turkish-Cypriots' 
+WVS7$CYP <- as.factor(WVS7$CYP)
+WVS7_cyp <- filter(WVS7, B_COUNTRY == 196)
+table(WVS7$CYP)
+
+save(WVS7, file=("World_Values_Survey_Wave_7_Inverted_R_v1_5.rdata"))
+
+
+#####Functions to calculate weighted survey estimates#####
+
+#Fuction passing lists of data, weight, group and measure into 'survey' package
+Func <- function(passedData, passedWeights, group, estimate, groupVal){
+  EBsurvey <- svydesign(strata = NULL, ids = ~0, weights = passedData[, passedWeights], data = passedData)
+  EBsurveySubset <- subset(EBsurvey, EBsurvey[["variables"]][,group] == groupVal)
+  result <- svymean(as.formula(paste0("~", estimate)), EBsurveySubset, na.rm=TRUE)
+  return(result)
+}
+
+#Function calling 'Func'. Calcuates weighted survey distribution for multiple factor levels of given measure by group and subgroup (GCC/TCC) across time
+applyFunc <- function(groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo),))
+  for(i in 1:nrow(results)) {
+    for(j in 1:5) {
+      results[j, i] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[j]] 
+    }}
+  return(results)
+}
+
+
+#Function calling 'Func'. Calcuates mean estimates of given measure by group and subgroup (GCC/TCC) across time
+applyFunc2  <- function(varName, groupVal, dataInfo)
+{
+  results <- data.frame(rep(NA, length(dataInfo)))
+  colnames(results) <- varName
+  for(i in 1:nrow(results)) {
+    results[i,varName] <- Func(dataInfo[[i]]$passedData, dataInfo[[i]]$passedWeights, dataInfo[[i]]$group, dataInfo[[i]]$estimate, groupVal)[[1]] 
+  }
+  return(results)
+}
+
+#Function to convert to percentages
+mult_one <- function(var1)
+{
+  round((var1*100), 1) 
+}
+
+
+
+####Analysis 1: Perceptions of Corruption in country####
+
+#Unweighted distribution & mean
+table(is.na(WVS7_cyp$Q112)) #33 na
+table(WVS7_cyp$CYP, WVS7_cyp$Q112) # % that give '10', GC: 54.4, TC: 23.6%; % % that give '1', GC: 0, TC: 0.4.
+WVS7_cyp %>%
+  group_by(CYP) %>%
+  summarise_at(vars(Q112), funs(mean(., na.rm=TRUE)))
+
+
+#Lists with data, weights, groups and variables to pass into survey estimate function for weighted mean
+r1 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q112") #Cypriots
+r2 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q112") #GCC & TCC
+
+#Cypriots
+dataInfo <- list(r1)
+corruption_country <- applyFunc2("mean", "196", dataInfo) 
+corruption_country$group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r2)
+results <- applyFunc2("mean", "Greek-Cypriots", dataInfo) 
+results$group <- c("Greek-Cypriots")
+corruption_country <- rbind(corruption_country, results)
+
+#Turkish-Cypriots
+results <- applyFunc2("mean", "Turkish-Cypriots", dataInfo) 
+results$group <- c("Turkish-Cypriots")
+corruption_country <- rbind(corruption_country, results)
+corruption_country$group <- as.factor(corruption_country$group)
+
+
+#Calculating 'corruption in country for European countries in WVS7
+r3 <- list(passedData = WVS7, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q112")
+
+dataInfo <- list(r3)
+corruption_euro_country <- applyFunc2("mean", "20", dataInfo) #Andorra
+results <- applyFunc2("mean", "276", dataInfo) #Germany
+corruption_euro_country <- rbind(corruption_euro_country, results)
+results <- applyFunc2("mean", "300", dataInfo) #Greece
+corruption_euro_country <- rbind(corruption_euro_country, results)
+results <- applyFunc2("mean", "642", dataInfo) #Romania
+corruption_euro_country <- rbind(corruption_euro_country, results)
+results <- applyFunc2("mean", "643", dataInfo) #Russia
+corruption_euro_country <- rbind(corruption_euro_country, results)
+results <- applyFunc2("mean", "688", dataInfo) #Serbia
+corruption_euro_country <- rbind(corruption_euro_country, results)
+results <- applyFunc2("mean", "792", dataInfo) #Turkey
+corruption_euro_country <- rbind(corruption_euro_country, results)
+#results <- applyFunc2("mean", "804", dataInfo) #Ukraine
+#corruption_euro_country <- rbind(corruption_euro_country, results)
+#rx <- list(passedData = WVS7_UKR, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q112")
+#dataInfo <- list(rx)
+#results_ukr <- applyFunc2("mean", "804", dataInfo) #Ukraine
+#results_ukr$mean <- round(results_ukr$mean, 1)
+#corruption_euro_country <- rbind(corruption_euro_country, results_ukr)
+#corruption_country <- rbind(corruption_country, results_ukr)
+#results_ukr$group <- as.factor(c("Ukraine"))
+#levels(corruption_country$group)
+
+corruption_euro_country$group <- as.factor(c("Andorra", "Germany", "Greece", "Romania", "Russia", "Serbia", "Turkey", "Ukraine"))
+corruption_country <- rbind(corruption_country, corruption_euro_country)
+corruption_country$mean <- round(corruption_country$mean, 1)
+
+save(corruption_country, file=("corruption_country.rdata"))
+
+#Perceptions of corruption in country by ideology
+gcc <- WVS7_cyp %>% filter(CYP == "Greek-Cypriots")
+tcc <- WVS7_cyp %>% filter(CYP == "Turkish-Cypriots")
+
+WVS7_gcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~W_WEIGHT, data = gcc)
+gcc_corrupt_ideo <- svyby(~Q112, ~Q240_rec, WVS7_gcc_svy, svymean, se=T, na.rm=T, ci=F, keep.names=F)
+gcc_corrupt_ideo$group <- "Greek-Cypriots"
+
+WVS7_tcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~W_WEIGHT, data = tcc)
+tcc_corrupt_ideo <- svyby(~Q112, ~Q240_rec, WVS7_tcc_svy, svymean, se=T, na.rm=T, ci=F, keep.names=F)
+tcc_corrupt_ideo$group <- "Turkish-Cypriots"
+
+ideology_corrupt <- as.data.frame(rbind(gcc_corrupt_ideo, tcc_corrupt_ideo))
+ideology_corrupt <- ideology_corrupt %>% rename(corrupt = Q112, ideology = Q240_rec) 
+ideology_corrupt$corrupt <- round(ideology_corrupt$corrupt, 1) 
+ideology_corrupt <- ideology_corrupt %>% mutate(group = factor(group, levels = c("Turkish-Cypriots", "Greek-Cypriots")))
+
+save(ideology_corrupt, file=("ideology_corrupt.rdata"))
+
+
+#Perceptions of corruption in country by gender
+WVS7_gcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~W_WEIGHT, data = gcc)
+gcc_corrupt_gen <- svyby(~Q112, ~Q260_rec, WVS7_gcc_svy, svymean, se=T, na.rm=T, ci=F, keep.names=F)
+gcc_corrupt_gen$group <- "Greek-Cypriots"
+
+WVS7_tcc_svy <- svydesign(strata = NULL, ids = ~0, weights = ~W_WEIGHT, data = tcc)
+tcc_corrupt_gen <- svyby(~Q112, ~Q260_rec, WVS7_tcc_svy, svymean, se=T, na.rm=T, ci=F, keep.names=F)
+tcc_corrupt_gen$group <- "Turkish-Cypriots"
+
+gender_corrupt <- as.data.frame(rbind(gcc_corrupt_gen, tcc_corrupt_gen))
+gender_corrupt <- gender_corrupt %>% rename(corrupt = Q112, gender = Q260_rec) 
+gender_corrupt$corrupt <- round(gender_corrupt$corrupt, 1) 
+gender_corrupt <- gender_corrupt %>% mutate(group = factor(group, levels = c("Turkish-Cypriots", "Greek-Cypriots")))
+
+save(gender_corrupt, file=("gender_corrupt.rdata"))
+
+
+
+####Analysis 2: Perceptions of Corruption by Specific Groups####
+
+#Unweighted distribution
+table(WVS7_cyp$CYP, WVS7_cyp$Q113_rec)
+
+#Lists with data, weights, groups and variables to pass into survey estimate function for weighted distribution
+r4 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q113_rec") #Cypriots - Corruption by state authorities
+r5 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q114_rec") #Cypriots - Corruption by business executives
+r6 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q115_rec") #Cypriots - Corruption by local authorities
+r7 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q116_rec") #Cypriots - Corruption by civil service providers
+
+r8 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q113_rec") #Cypriots - Corruption by state authorities
+r9 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q114_rec") #Cypriots - Corruption by business executives
+r10 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q115_rec") #Cypriots - Corruption by local authorities
+r11 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q116_rec") #Cypriots - Corruption by civil service providers
+
+
+#Cypriots
+dataInfo <- list(r4, r5, r6, r7)
+corruption_perceptions <- applyFunc("196", dataInfo) 
+colnames(corruption_perceptions) <- c("state_authorities", "bus_exec", "local_authorities", "civil_service")
+corruption_perceptions$group <- c("Cypriots")
+corruption_perceptions$corruption <- c("No Response", "None of them", "Few of them", "Most of them", "All of them")
+
+#Greek-Cypriots
+dataInfo <- list(r8, r9, r10, r11)
+results <- applyFunc("Greek-Cypriots", dataInfo) 
+colnames(results) <- c("state_authorities", "bus_exec", "local_authorities", "civil_service")
+results$corruption <- c("No Response", "None of them", "Few of them", "Most of them", "All of them")
+results$group <- c("Greek-Cypriots")
+
+#Turkish-Cypriots
+results2 <- applyFunc("Turkish-Cypriots", dataInfo) 
+colnames(results2) <- c("state_authorities", "bus_exec", "local_authorities", "civil_service")
+results2$corruption <- c("No Response", "None of them", "Few of them", "Most of them", "All of them")
+results2$group <- c("Turkish-Cypriots")
+results <- rbind(results2, results)
+corruption_perceptions <- bind_rows(corruption_perceptions, results)
+corruption_perceptions <- corruption_perceptions %>% mutate_at(vars(-group, -corruption), mult_one)
+
+save(corruption_perceptions, file=("corruption_perceptions.rdata"))
+
+
+####Analysis 3: Accountability
+#Unweighted distribution & mean
+table(is.na(WVS7_cyp$Q120)) #55 na
+table(WVS7_cyp$CYP, WVS7_cyp$Q120)
+WVS7_cyp %>%
+  group_by(CYP) %>%
+  summarise_at(vars(Q120), funs(mean(., na.rm=TRUE)))
+
+
+#Weighted mean
+r12 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="B_COUNTRY", estimate="Q120") #Cypriots
+r13 <- list(passedData = WVS7_cyp, passedWeights="W_WEIGHT", group="CYP", estimate="Q120") #GCC & TCC
+
+#Cypriots
+dataInfo <- list(r12)
+accountability_country <- applyFunc2("mean", "196", dataInfo) 
+accountability_country$group <- c("Cypriots")
+
+#Greek-Cypriots
+dataInfo <- list(r13)
+results <- applyFunc2("mean", "Greek-Cypriots", dataInfo) 
+results$group <- c("Greek-Cypriots")
+accountability_country <- rbind(accountability_country, results)
+
+#Turkish-Cypriots
+results <- applyFunc2("mean", "Turkish-Cypriots", dataInfo) 
+results$group <- c("Turkish-Cypriots")
+accountability_country <- rbind(accountability_country, results)
+accountability_country$group <- as.factor(accountability_country$group)
+accountability_country$mean <- round(accountability_country$mean, 1)
+
+save(accountability_country, file=("accountability_country.rdata"))
+```
+
+```{r include=FALSE}
+
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(sjmisc)
+library(tidyr)
+
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/corruption_country.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/ideology_corrupt.rdata")
+load("/Users/Yioryos/Career/Cyprus blog/Data/Cyprus/Data/corruption_perceptions.rdata")
+
+
+##PLOT 1: Perceptions of Corruption in country#
+#Perceptions of Corruption among GC & TC
+corruption_country_sub <- filter(corruption_country, group =="Greek-Cypriots" | group =="Turkish-Cypriots")
+corruption_country_sub$group <- droplevels(corruption_country_sub$group)
+
+corruption_country_sub <- corruption_country_sub %>% #Sorting for ggplot
+  arrange(mean) %>%
+  mutate(group = factor(group, levels = .$group), col = ifelse(group == 'Cyprus (GC & TC)', '#9702A7', 'grey40'))
+
+plot_corruption_cyprus <- ggplot(corruption_country_sub, aes(x=group, y=mean, label=mean)) + 
+  geom_point(stat='identity', fill="black", size=8)  +
+  geom_segment(aes(y = mean, 
+                   x = group, 
+                   yend = 1, 
+                   xend = group), 
+               color = corruption_country_sub$col) +
+  geom_text(color="white", size=3.9) +
+  labs(title="Perceptions of Corruption in Cyprus", 
+       caption="          Data: World Values Survey 7 (2019)",
+       y = "\n1 = there's no corruption in this country;10 = there's abundant corruption in this country", x = "") + 
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.56, .965)) +
+  theme(plot.tag = element_text(size = 12, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 14, margin = margin(t = 12), color = "grey40", hjust = -.4)) +
+  scale_y_continuous(breaks=seq(1,10,1), limits=c(1,10), expand = c(0,.05)) +
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey90"),
+        plot.title = element_text(size = 14, margin=margin(0,0,20,0))) 
+
+
+
+##PLOT 2: Perceptions of Corruption among European countries
+corruption_country_sub <- filter(corruption_country, group !="Greek-Cypriots", group !="Turkish-Cypriots")
+corruption_country_sub$group <- car::recode(corruption_country_sub$group, as.factor = T, "'Cypriots' = 'Cyprus (GC & TC)'")
+corruption_country_sub$group <- factor(corruption_country_sub$group)
+corruption_country_sub$mean <- round(corruption_country_sub$mean, 1)
+
+corruption_country_sub <- corruption_country_sub %>% #Sorting for ggplot
+  arrange(mean) %>%
+  mutate(group = factor(group, levels = .$group), col = ifelse(group == 'Cyprus (GC & TC)', '#9702A7', 'grey40'))
+cyp <- subset(corruption_country_sub , group == "Cyprus (GC & TC)")
+corruption_country_sub
+
+plot_corruption_country_sub <- ggplot(corruption_country_sub, aes(x=group, y=mean, label=mean)) + 
+  geom_point(stat='identity', fill="black", size=8)  +
+  geom_point(data=cyp, colour="#9702A7", size=8) +
+  geom_segment(aes(y = mean, 
+                   x = group, 
+                   yend = 1, 
+                   xend = group), 
+               color = corruption_country_sub$col) +
+  geom_text(color="white", size=3.5) +
+  labs(title="Perceptions of Corruption in Country", 
+       caption="   Data: World Values Survey 7 (2017-2020)",
+       y = "\n1=there's no corruption in this country; 10=there's abundant corruption in this country", x = "") + 
+  labs(tag = "Cyprus Public Opinion Trends\n                        www.c-pot.org") +
+  theme(plot.tag.position = c(.58, .975)) +
+  theme(plot.tag = element_text(size = 11, color = "grey40", hjust = -.4)) +
+  theme(plot.caption = element_text(size = 12, margin = margin(t = 10), color = "grey40", hjust = -.4)) +
+  scale_y_continuous(breaks=seq(1,10,1), limits=c(1,10), expand = c(0,.05)) +
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "grey97", colour = "grey70")) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size=.3, color="grey90"),
+        plot.title = element_text(size = 14, margin=margin(0,0,20,0))) 
+
+
+
+#PLOT 3: Corruption perceptions by ideology
+ideology_corrupt_sub <- filter(ideology_corrupt, ideology !="Don't know")
+ideology_corrupt_sub$ideology <- droplevels(ideology_corrupt_sub$ideology)
+ideology_corrupt_sub$ideology <- droplevels(ideology_corrupt_sub$ideology)
+ideology_corrupt_sub$se <- round(ideology_corrupt_sub$se, 2)
+ideology_corrupt_sub$ideology <- factor(ideology_corrupt_sub$ideology, levels = c("Right", "Centre", "Left"))
+ideology_corrupt_sub <- ideology_corrupt_sub %>% #Sorting to display correct standard errors in plotly bar chart
+  arrange(ideology)
+
+
+#Legend attributes
+l <- list(font = list(family = "avenir", size = 18, color = "#000"), x = 100, y = 0.5, traceorder="reversed")
+
+#Annotation (individual title) attributes
+anot_ideo_cor <- list(
+  text = "Perceptions of Corruption in Cyprus by Respondent Ideology (2019)",
+  font = list(family = "avenir", size = 20, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "center",
+  align = "center",
+  x = 0.5,
+  y = 1,
+  showarrow = FALSE
+)
+
+anot_logo <- list(
+  text = "www.c-pot.org",
+  font = list(family = "avenir", size = 17, color = "#484848"),
+  xref = "paper",
+  yref = "paper",
+  yanchor = "bottom",
+  xanchor = "bottom",
+  align = "right",
+  x = 1.28,
+  y = 0.27,
+  showarrow = FALSE
+)
+
+
+plot_ideology_corrupt <- plot_ly(ideology_corrupt_sub, size = I(35)) %>%
+  add_bars(
+    y = ~group, yend = ~group,
+    x = ~corrupt, xend = 10,
+    color = ~ideology,
+    error_x = list(
+      type = "ideology_corrupt_sub", 
+      array = ~se,
+      thickness = 1,
+      width = 3,
+      color = "black"))
+plot_ideology_corrupt <- plot_ideology_corrupt %>%
+  layout(title = "",
+         yaxis = list(title = ""),
+         xaxis = list(range = c(0, 10.1), title = "1 = there's no corruption in this country;     10 = there is abundant corruption in this country ", dtick = 1, tickfont = list(size = 12)),
+         legend = l,
+         annotations = list(anot_ideo_cor, anot_logo))
+
+
+
+##PLOT 4: Perceptions of Corruption by Specific Groups
+#State Authorities
+state_authorities <- corruption_perceptions %>% select(-"bus_exec", -"local_authorities", -"civil_service")
+state_authorities <- spread(state_authorities,corruption, state_authorities)
+colnames(state_authorities) <- c("group", "all_of_them", "few_of_them", "most_of_them", "no_response", "none_of_them")
+state_authorities$group <- factor(state_authorities$group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+state_authorities <- state_authorities[-c(1), ]
+state_authorities <- state_authorities[c(6, 3, 4, 2, 5, 1)]
+state_authorities <- state_authorities %>% mutate_at(1:5, round) 
+
+top_labels <- c("None\nof them", "Few\nof them", "Most\nof them", "All\nof them", "No\nResponse")
+
+plot_state_authorities <- plot_ly(state_authorities, x = ~none_of_them, y = ~group, type = 'bar', orientation = 'h',
+                                  marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                                line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~few_of_them, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~most_of_them, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~all_of_them, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~no_response, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Among the following groups of people,how many\ndo you believe are involved in corruption?\nState Authorities'", y=.9),
+         xaxis = list(title = "Data: World Values Survey 7 (2019)\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 80, r = 0, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 11,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them / 2, y = ~group,
+                  text = paste(state_authorities[,"none_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them / 2, y = ~group,
+                  text = paste(state_authorities[,"few_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them / 2, y = ~group,
+                  text = paste(state_authorities[,"most_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them / 2, y = ~group,
+                  text = paste(state_authorities[,"all_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them + no_response / 1.5, y = ~group,
+                  text = paste(state_authorities[,"no_response"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(8 / 2, 8 + 34 / 2, 8 + 34 + 33 / 2, 8 + 34 + 33 + 15 / 2, 8 + 34 + 33 + 15 + 15 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+
+
+
+#Business Executives
+bus_exec <- corruption_perceptions %>% select(-"state_authorities", -"local_authorities", -"civil_service")
+bus_exec <- spread(bus_exec,corruption, bus_exec)
+colnames(bus_exec) <- c("group", "all_of_them", "few_of_them", "most_of_them", "no_response", "none_of_them")
+bus_exec$group <- factor(bus_exec$group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+bus_exec <- bus_exec[-c(1), ]
+bus_exec <- bus_exec[c(6, 3, 4, 2, 5, 1)]
+bus_exec <- bus_exec %>% mutate_at(1:5, round) 
+
+top_labels <- c("None\nof them", "Few\nof them", "Most\nof them", "All\nof them", "No\nResponse")
+
+plot_bus_exec <- plot_ly(bus_exec, x = ~none_of_them, y = ~group, type = 'bar', orientation = 'h',
+                         marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                       line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~few_of_them, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~most_of_them, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~all_of_them, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~no_response, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Among the following groups of people,how many\ndo you believe are involved in corruption?\nBusiness Executives'", y=.9),
+         xaxis = list(title = "Data: World Values Survey 7 (2019)\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 80, r = 0, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 11,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them / 2, y = ~group,
+                  text = paste(bus_exec[,"none_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them / 2, y = ~group,
+                  text = paste(bus_exec[,"few_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them / 2, y = ~group,
+                  text = paste(bus_exec[,"most_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them / 2, y = ~group,
+                  text = paste(bus_exec[,"all_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them + no_response / 1.5, y = ~group,
+                  text = paste(bus_exec[,"no_response"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(11 / 2, 8 + 34 / 2, 8 + 34 + 33 / 2, 8 + 34 + 33 + 15 / 2, 8 + 34 + 33 + 15 + 15 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+
+
+
+#Local Authorities
+local_authorities <- corruption_perceptions %>% select(-"state_authorities", -"bus_exec", -"civil_service")
+local_authorities <- spread(local_authorities,corruption, local_authorities)
+colnames(local_authorities) <- c("group", "all_of_them", "few_of_them", "most_of_them", "no_response", "none_of_them")
+local_authorities$group <- factor(local_authorities$group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+local_authorities <- local_authorities[-c(1), ]
+local_authorities <- local_authorities[c(6, 3, 4, 2, 5, 1)]
+local_authorities <- local_authorities %>% mutate_at(1:5, round) 
+
+top_labels <- c("None\nof them", "Few\nof them", "Most\nof them", "All\nof them", "No\nResponse")
+
+plot_local_authorities <- plot_ly(local_authorities, x = ~none_of_them, y = ~group, type = 'bar', orientation = 'h',
+                                  marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                                line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~few_of_them, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~most_of_them, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~all_of_them, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~no_response, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Among the following groups of people,how many\ndo you believe are involved in corruption?\nLocal Authorities'", y=.9),
+         xaxis = list(title = "Data: World Values Survey 7 (2019)\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 80, r = 0, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 11,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them / 2, y = ~group,
+                  text = paste(local_authorities[,"none_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them / 2, y = ~group,
+                  text = paste(local_authorities[,"few_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them / 2, y = ~group,
+                  text = paste(local_authorities[,"most_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them / 2, y = ~group,
+                  text = paste(local_authorities[,"all_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them + no_response / 1.5, y = ~group,
+                  text = paste(local_authorities[,"no_response"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(6 / 2, 6 + 41 / 2, 6 + 41 + 31 / 2, 6 + 41 + 31 + 12 / 2, 6 + 41 + 31 + 12 + 10 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+
+
+
+#Civil Service
+civil_service <- corruption_perceptions %>% select(-"state_authorities", -"bus_exec", -"local_authorities")
+civil_service <- spread(civil_service,corruption, civil_service)
+colnames(civil_service) <- c("group", "all_of_them", "few_of_them", "most_of_them", "no_response", "none_of_them")
+civil_service$group <- factor(civil_service$group, levels = c("Greek-Cypriots", "Turkish-Cypriots"))
+civil_service <- civil_service[-c(1), ]
+civil_service <- civil_service[c(6, 3, 4, 2, 5, 1)]
+civil_service <- civil_service %>% mutate_at(1:5, round) 
+
+top_labels <- c("None\nof them", "Few\nof them", "Most\nof them", "All\nof them", "No\nResponse")
+
+plot_civil_service <- plot_ly(civil_service, x = ~none_of_them, y = ~group, type = 'bar', orientation = 'h',
+                              marker = list(color = 'rgba(38, 24, 74, 0.8)',
+                                            line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
+  add_trace(x = ~few_of_them, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
+  add_trace(x = ~most_of_them, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
+  add_trace(x = ~all_of_them, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
+  add_trace(x = ~no_response, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
+  layout(title = list(text = "'Among the following groups of people,how many\ndo you believe are involved in corruption?\nCivil Service'", y=.9),
+         xaxis = list(title = "Data: World Values Survey 7 (2019)\n\nCyprus Public Opinion Trends&nbsp;&nbsp;&nbsp;&nbsp;www.c-pot.org",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         yaxis = list(title = "",
+                      showgrid = FALSE,
+                      showline = FALSE,
+                      showticklabels = FALSE,
+                      zeroline = FALSE),
+         barmode = 'stack',
+         paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
+         margin = list(l = 80, r = 0, t = 140, b = 80),
+         showlegend = F) %>%
+  # labeling the y-axis
+  add_annotations(xref = 'paper', yref = 'y', x = 0, y = ~group,
+                  xanchor = 'right',
+                  text = ~group,
+                  font = list(family = 'Avenir', size = 11,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE, align = 'right') %>%
+  # labeling the percentages of each bar (x_axis)
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them / 2, y = ~group,
+                  text = paste(civil_service[,"none_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them / 2, y = ~group,
+                  text = paste(civil_service[,"few_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them / 2, y = ~group,
+                  text = paste(civil_service[,"most_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them / 2, y = ~group,
+                  text = paste(civil_service[,"all_of_them"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  add_annotations(xref = 'x', yref = 'y',
+                  x = ~none_of_them + few_of_them + most_of_them + all_of_them + no_response / 1.5, y = ~group,
+                  text = paste(civil_service[,"no_response"],'%'),
+                  font = list(family = 'Avenir', size = 10,
+                              color = 'rgb(248, 248, 255)'),
+                  showarrow = FALSE) %>%
+  # labeling the first Likert scale (on the top)
+  add_annotations(xref = 'x', yref = 'paper',
+                  x = c(6 / 2, 6 + 41 / 2, 6 + 41 + 31 / 2, 6 + 41 + 31 + 12 / 2, 6 + 41 + 31 + 12 + 10 / 2),
+                  y = 1.1,
+                  text = top_labels,
+                  font = list(family = 'Avenir', size = 13,
+                              color = 'rgb(67, 67, 67)'),
+                  showarrow = FALSE)
+```
+
+<br>
+
+>Corruption and conflict of interest among government officials is at the forefront of public discourse in Cyprus due to recent scandals. This post examines Cypriots’ perceptions towards public sector corruption and accountability.  
+• The vast majority of Cypriots feel that corruption among the civil service, state officials, and business executives is pervasive. Greek-Cypriots in particular overwhelmingly express that corruption is prevalent.<br>
+• Those that identify with the political ‘left’ report slightly higher levels of corruption than others.  
+• At the same time, even though Cypriots believe corruption is pervasive, their views towards the possibility of the corrupt being held accountable are a little more optimistic.  
+• These views likely fuel the general mistrust Cypriots have of political institutions, as Cypriots tend to be among the least trusting in the EU, indicating that political leaders have a lot of work to do if they wish to regain peoples’ confidence and meaningfully engage with them.  
+<br>
+__Αντιλήψεις Σχετικά με τη Διαφθορά και την Λογοδοσία στο Δημόσιο Τομέα__  
+Η διαφθορά και η σύγκρουση συμφερόντων μεταξύ των κυβερνητικών αξιωματούχων βρίσκεται στο επίκεντρο της δημόσιας συζήτησης στην Κύπρο λόγω πρόσφατων σκανδάλων. Αυτή η ανάρτηση εξετάζει τις αντιλήψεις των Κυπρίων γύρω από τη διαφθορά και λογοδοσία στο δημόσιο τομέα.  
+• Η Κύπριοι κατά συντριπτική πλειοψηφία, και ειδικότερα οι Ελληνοκύπριοι, πιστεύουν ότι η διαφθορά μεταξύ των δημοσίων υπαλλήλων, κρατικών αξιωματούχων και στελέχη επιχειρήσεων είναι διαδεδομένη.   
+• Αυτοί που ταυτίζονται με τις αντιλήψεις της «αριστεράς» δηλώνουν ελαφρώς υψηλότερα επίπεδα διαφθοράς σε σύγκριση με άλλους.  
+• Ταυτόχρονα, παρόλο που οι Κύπριοι πιστεύουν ότι η διαφθορά είναι διαδεδομένη, οι απόψεις τους σχετικά με την υπάρξει λογοδοσίας κατά της διαφθορας είναι λίγο πιο αισιόδοξες.  
+• Αυτές οι απόψεις πιθανώς τροφοδοτούν τη γενική δυσπιστία που έχουν οι Κύπριοι προς τους πολιτικούς θεσμούς, καθώς οι Κύπριοι τείνουν να έχουν από τα πιο χαμηλά επίπεδα εμπιστευτικότητας στην ΕΕ, υποδεικνύοντας ότι οι πολιτικοί ηγέτες έχουν πολύ δρόμο εάν επιθυμούν να αποκτήσουν την εμπιστοσύνη των πολιτών.  
+<br>
+__Kamu Sektöründeki Yolsuzluk ve Hesap Verebilirlikle İlgili Algı__  
+Yakın dönemde patlak veren skandallar sebebiyle Kıbrıs’ta kamusal söylemin
+gündeminde devlet görevlileri arasındaki yaygın olan yozlaşma ve çıkar çatışmalarıyer almaktadır. Bu yazıda Kıbrıslıların kamu sektöründeki yolsuzluk ve hesap verebilirlikle ilgili algısı incelenmektedir.  
+• Kıbrıslıların büyük çoğunluğu; devlet memurları, hükumet yetkilileri ve işletme yöneticileri arasında yolsuzluğun yaygın olduğu inancındadır. Özellikle Kıbrıs Rumları çok büyük oranda bu yönde görüş bildirmektedir.  
+• Kendini siyasal olarak 'sol' ile özdeşleştirenler, diğerlerine göre biraz daha yüksek düzeyde yolsuzluk bildirmektedir.  
+• Aynı zamanda, Kıbrıslılar yolsuzluğun yaygın olduğu yönünde görüş bildiriyor
+olmakla beraber, yolsuzluk yapanların sorumlu tutulması ihtimali konusunda
+biraz daha iyimserdir.  
+• Kıbrıslılar, AB milletleri arasında siyasi kurumlara en az güvenenler arasında olduğundan, bu görüşlerin siyasi kurumlara olan genel güvensizliklerini körüklüyor olması muhtemeldir. Bu da, siyasi liderlerin insanların güvenini yeniden kazanmak ve onlarla anlamlı bir şekilde ilişki kurmak istiyorlarsa yapacak çok işi olduğunu göstermektedir.  
+
+<br>
+Corruption and conflict of interest in government are at the forefront of public discourse in Cyprus today. Scandals about ‘golden passports’ and police intimidation towards citizens critical of government ministers in the Greek-Cypriot community, and vote buying in 2020 elections and scandals about property sales to British buyers in the Turkish-Cypriot community, are just some of the corruption issues Cypriots are confronting. How accepting are Cypriots of such breaches in public trust? What are their views on the misuse of public power for private benefit?  
+<br>
+This post examines Cypriots’ perceptions on: (i) the level of public sector corruption and (ii) the extent to which accountability exists. The analysis uses recent World Values Survey data from 2019. It should be noted that these results represent public sentiment before the aforementioned scandals came to prominence.  
+<br>
+The vast majority of Cypriots feel that corruption among the public sector and associated actors such as business executives is pervasive. World Value Survey respondents were asked to place their views on corruption on a 10-point scale where ‘1’ means ‘there is no corruption in my country’ and ‘10’ means ‘there is abundant corruption in my country. Cypriots average score is 8.5, with Greek-Cypriots reporting a higher average score (8.7) than Turkish-Cypriots (7.7). In fact, around 54% of Greek-Cypriots reported the highest possible score of ‘10’ and none reported the lowest score of ‘1’. Among Turkish-Cypriots, around 24% reported the highest score of ‘10’. Perceptions of corruption are quite similar across all ideological preferences (left, centre, right), even though those that identify with the political ‘left’ tend to report slightly higher levels of corruption than others, particularly among Greek-Cypriots.  
+<br>
+```{r echo=FALSE}
+
+plot_corruption_cyprus
+
+```
+<br>
+```{r echo=FALSE}
+
+plot_ideology_corrupt
+```
+<br><br>
+A cross-country comparison, albeit tricky to interpret due to cultural differences in survey response style and societal factors, indicates that Cypriots score higher than nearly all of the other nine European countries in Wave 7 of the World Values Survey (2017 - 2020).  
+<br>
+```{r echo=FALSE}
+
+plot_corruption_country_sub
+
+```
+<br>
+Views towards specific groups within the public sector and industry again show that they are perceived as operating with a significant amount of corruption. Around 40% of Cypriots feel that ‘most’ or ‘all’ civil servants and business executives are involved in corruption. Even more, around half, feel that ‘most’ or ‘all’ state authorities are corrupt. The share of Greek-Cypriots that believe that none of these groups are involved in corruption is again very low at around 1%, whereas between 8-11% of Turkish-Cypriots believe this.  
+
+```{r echo=FALSE}
+
+plot_civil_service
+
+```
+<br>
+```{r echo=FALSE}
+
+plot_state_authorities
+
+```
+<br>
+```{r echo=FALSE}
+
+plot_bus_exec
+
+```
+<br>
+Corruption and conflict of interest flourish when those involved in such behavior are not held accountable. When asked to report their views on the risk of being held accountable for corruption (i.e. how likely they think it is to be held accountable) on a 10-point scale, where ‘1’ means ‘no risk at all’ and ‘10’ means ‘very high risk’, Cypriots’ average score is 5.8. This reflects more optimism relative to views on the existence of corruption, indicating that respondents feel there may be a realistic chance that those caught will face consequences.  
+<br> 
+This analysis indicates that Cypriots have real concerns around public sector corruption and lack of accountability. Greek-Cypriots in particular overwhelmingly express unfavourable views towards the pervasiveness of corruption. Moreover, given that these opinions were expressed before the large corruption scandals recently engulfed society, it’s likely that sentiment towards corruption and accountability is even more unfavourable now. These views are reflective of the general mistrust Cypriots have of political institutions ([1](http://www.c-pot.org/post/disaffection-with-parties/){target="_blank"}, [2](http://www.c-pot.org/post/disaffection-with-eu-institutions/){target="_blank"}), as Cypriots tend to be among the least trusting in the EU, indicating that political leaders have a lot of work to do if they wish to regain peoples’ trust and meaningfully engage with them.  
+<br><br>
+ __Data sources__  
+[World Values Survey 7.](http://www.worldvaluessurvey.org/wvs.jsp){target="_blank"}
+<br><br>
+__References__  
+_Al Jazeera._ (13 Oct 2020). Cyprus abolishes citizenship through investment programme. [Available here.](https://www.aljazeera.com/news/2020/10/13/cyprus-abolishes-citizenship-through-investment-programme){target="_blank"}  
+_Cyprus Mail._ (29 Dec 2020). Justice minister under fire for reporting Twitter parody account to police. [Available here.](https://cyprus-mail.com/2020/12/29/justice-minister-under-fire-for-reporting-twitter-parody-account-to-police/){target="_blank"}
+
